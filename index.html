@@ -67,6 +67,13 @@ header.top p { margin: 0 0 6px; color: var(--muted); max-width: 70ch; }
   font-size: .75rem; font-weight: 700; border-radius: 999px; padding: 1px 8px; }
 .cap { font-size: .88rem; margin-top: 6px; line-height: 1.3; }
 .cap b { margin-right: 4px; }
+h2.sect { font-size: 1.1rem; margin: 22px 0 12px; }
+h2.sect span { color: var(--muted); font-weight: 400; font-size: .9rem; margin-left: 4px; }
+.vchip { position: absolute; left: 6px; bottom: 6px; background: rgba(17,17,17,.8); color: #fff; font-size: .72rem;
+  font-weight: 600; border-radius: 4px; padding: 1px 6px; }
+.vtabs { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 14px; }
+.vtabs a { text-decoration: none; border: 1px solid var(--line); border-radius: 999px; padding: 4px 12px; font-size: .9rem; }
+.vtabs a[aria-current="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
 
 /* detail */
 .dtop { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 16px 0 8px; }
@@ -135,7 +142,10 @@ form.add .row input { flex: 1; min-width: 160px; }
       <span class="sp"></span>
       <button type="button" id="logout">Odhlásit</button>
     </div>
-    <div class="grid" id="grid"></div>
+    <h2 class="sect">Oblíbené<span id="nfav"></span></h2>
+    <div class="grid" id="gridfav"></div>
+    <h2 class="sect">Ostatní<span id="noth"></span></h2>
+    <div class="grid" id="gridoth"></div>
   </div>
 
   <div id="detail" class="wrap" hidden>
@@ -147,6 +157,7 @@ form.add .row input { flex: 1; min-width: 160px; }
       <h2 id="dtitle"></h2>
     </div>
     <p class="idea" id="didea"></p>
+    <nav class="vtabs" id="vtabs" aria-label="Verze návrhu" hidden></nav>
     <div class="sides" id="sides">
       <figure><button class="side" type="button" id="front" aria-label="Přední strana, zvětšit"></button>
         <figcaption>Přední strana (klikněte pro zvětšení)</figcaption></figure>
@@ -184,9 +195,9 @@ const LS = {
 };
 const $ = id => document.getElementById(id);
 const GENERAL = { key: "_obecne", label: "", name: "Obecné poznámky ke všem návrhům",
-  idea: "Celkový dojem, srovnání návrhů, co chybí, kterým dát přednost.", file: "" };
+  idea: "Celkový dojem, srovnání návrhů, co chybí, kterým dát přednost." };
 
-let KEY = null, DATA = null, COMMENTS = [], current = null;
+let KEY = null, DATA = null, COMMENTS = [], current = null, currentVer = null;
 const urls = new Map();
 
 const b64 = u8 => btoa(String.fromCharCode(...u8));
@@ -257,8 +268,8 @@ async function loadComments() {
 }
 const forKey = k => COMMENTS.filter(c => c.design === k);
 
+const versionsWord = n => n < 5 ? "verze" : "verzí";
 function buildGrid() {
-  const grid = $("grid");
   const io = new IntersectionObserver(entries => entries.forEach(en => {
     if (!en.isIntersecting) return;
     io.unobserve(en.target);
@@ -269,16 +280,24 @@ function buildGrid() {
     a.className = "card"; a.href = "#/" + it.key;
     a.innerHTML = '<div class="thumb"><img alt=""><span class="badge" hidden></span></div><div class="cap"><b></b><span></span></div>';
     const img = a.querySelector("img");
-    img.dataset.src = it.thumb; img.alt = it.label + " " + it.name;
+    img.dataset.src = it.versions[0].thumb; img.alt = it.label + " " + it.name;
+    if (it.versions.length > 1) {
+      const chip = document.createElement("span"); chip.className = "vchip";
+      chip.textContent = `${it.versions.length} ${versionsWord(it.versions.length)}`;
+      a.querySelector(".thumb").append(chip);
+    }
     a.querySelector("b").textContent = it.label;
     a.querySelector(".cap span").textContent = it.name;
     a.dataset.key = it.key;
-    grid.append(a);
+    (it.fav ? $("gridfav") : $("gridoth")).append(a);
     io.observe(img);
   }
+  const nfav = DATA.items.filter(it => it.fav).length;
+  $("nfav").textContent = `(${nfav})`;
+  $("noth").textContent = `(${DATA.items.length - nfav})`;
 }
 function updateCounts() {
-  for (const a of $("grid").children) {
+  for (const a of document.querySelectorAll(".card")) {
     const n = forKey(a.dataset.key).length, b = a.querySelector(".badge");
     b.hidden = !n; b.textContent = n;
   }
@@ -289,46 +308,60 @@ function updateCounts() {
 }
 
 function route() {
-  const key = decodeURIComponent(location.hash.replace(/^#\/?/, ""));
+  const [key, vpart] = decodeURIComponent(location.hash.replace(/^#\/?/, "")).split("/");
   const idx = DATA.items.findIndex(it => it.key === key);
   const it = key === GENERAL.key ? GENERAL : DATA.items[idx];
   if (!it) {
-    current = null;
+    current = currentVer = null;
     $("detail").hidden = true; $("gridview").hidden = false;
     document.title = DATA.title;
     return;
   }
-  saveDraft();
-  current = it;
+  const same = current === it;
+  if (!same) saveDraft();
+  const vi = it.versions ? Math.min(Math.max((parseInt(vpart, 10) || 1) - 1, 0), it.versions.length - 1) : 0;
+  const ver = it.versions ? it.versions[vi] : null;
+  current = it; currentVer = ver;
   $("gridview").hidden = true; $("detail").hidden = false;
   document.title = (it.label ? it.label + " " : "") + it.name + " – " + DATA.title;
   $("dtitle").textContent = (it.label ? it.label + " · " : "") + it.name;
   $("didea").textContent = it.idea;
-  $("dfile").textContent = it.file ? "Soubor: " + it.file + ".pdf" : "";
-  $("sides").hidden = !it.file;
+  $("dfile").textContent = ver ? "Soubor: " + ver.file + ".pdf" : "";
+  $("sides").hidden = !ver;
+  const tabs = $("vtabs"); tabs.innerHTML = "";
+  tabs.hidden = !ver || it.versions.length < 2;
+  if (!tabs.hidden) it.versions.forEach((v, i) => {
+    const a = document.createElement("a");
+    a.href = `#/${it.key}/${i + 1}`; a.textContent = v.name;
+    a.setAttribute("aria-current", String(i === vi));
+    tabs.append(a);
+  });
   const n = DATA.items.length;
-  $("prev").hidden = $("next").hidden = !it.file;
-  if (it.file) {
+  $("prev").hidden = $("next").hidden = !ver;
+  if (ver) {
     $("prev").href = "#/" + DATA.items[(idx - 1 + n) % n].key;
     $("next").href = "#/" + DATA.items[(idx + 1) % n].key;
-    for (const [id, path, label] of [["front", it.front, "přední"], ["backside", it.back, "zadní"]]) {
+    for (const [id, path, label] of [["front", ver.front, "přední"], ["backside", ver.back, "zadní"]]) {
       const btn = $(id);
       btn.innerHTML = "";
       const img = document.createElement("img");
       img.alt = `${it.label} ${it.name}, ${label} strana`;
       btn.append(img);
       btn.dataset.src = path;
-      if (id === "front" && urls.has(it.thumb)) urls.get(it.thumb).then(u => { if (current === it && !img.src) img.src = u; });
-      image(path).then(u => { if (current === it) img.src = u; });
+      if (id === "front" && urls.has(ver.thumb)) urls.get(ver.thumb).then(u => { if (currentVer === ver && !img.src) img.src = u; });
+      image(path).then(u => { if (currentVer === ver) img.src = u; });
     }
     const j = (idx + 1) % n;  // warm the next design's images
-    image(DATA.items[j].front); image(DATA.items[j].back);
+    image(DATA.items[j].versions[0].front); image(DATA.items[j].versions[0].back);
+    for (const v of it.versions) if (v !== ver) { image(v.front); image(v.back); }  // the other tabs
   }
-  $("ctext").value = LS.get("draft:" + it.key) || "";
-  $("cname").value = LS.get("name") || "";
-  $("cerr").textContent = "";
+  if (!same) {
+    $("ctext").value = LS.get("draft:" + it.key) || "";
+    $("cname").value = LS.get("name") || "";
+    $("cerr").textContent = "";
+    window.scrollTo(0, 0);
+  }
   renderComments();
-  window.scrollTo(0, 0);
 }
 window.addEventListener("hashchange", route);
 
@@ -345,9 +378,10 @@ function renderComments() {
     d.innerHTML = '<div class="meta"><b></b><span></span></div><div class="t"></div>';
     d.querySelector("b").textContent = c.name;
     d.querySelector(".meta span").textContent = fmt(c.ts);
-    if (current.file && c.version && c.version !== current.file) {
+    if (currentVer && c.version && (current.versions.length > 1 || c.version !== currentVer.file)) {
+      const v = current.versions.find(v => v.file === c.version);
       const o = document.createElement("span"); o.className = "old";
-      o.textContent = "k dřívější verzi " + c.version; d.querySelector(".meta").append(o);
+      o.textContent = v ? "k verzi " + v.name : "k dřívější verzi"; d.querySelector(".meta").append(o);
     }
     if (c.mine) {
       const x = document.createElement("button"); x.type = "button"; x.textContent = "Smazat";
@@ -378,7 +412,7 @@ $("cform").addEventListener("submit", async e => {
   $("csend").disabled = true; $("cerr").textContent = "";
   try {
     const r = await api("/api/comments", { method: "POST",
-      body: JSON.stringify({ design: current.key, version: current.file || "", name, text }) });
+      body: JSON.stringify({ design: current.key, version: currentVer ? currentVer.file : "", name, text }) });
     if (r.status === 429) throw new Error("Moc komentářů najednou, zkuste to prosím za minutu.");
     if (!r.ok) throw new Error("Komentář se nepodařilo odeslat (" + r.status + "). Text zůstal uložený, zkuste to prosím znovu.");
     COMMENTS.push(await r.json());
@@ -405,8 +439,8 @@ document.addEventListener("keydown", e => {
   if (!$("zoom").hidden) { if (e.key === "Escape") $("zoom").hidden = true; return; }
   if (!current) return;
   if (e.key === "Escape") location.hash = "#/";
-  else if (current.file && e.key === "ArrowLeft") location.hash = $("prev").getAttribute("href");
-  else if (current.file && e.key === "ArrowRight") location.hash = $("next").getAttribute("href");
+  else if (currentVer && e.key === "ArrowLeft") location.hash = $("prev").getAttribute("href");
+  else if (currentVer && e.key === "ArrowRight") location.hash = $("next").getAttribute("href");
 });
 
 (async () => {
