@@ -175,7 +175,7 @@ form.add .row input { flex: 1; min-width: 160px; }
 
 <script>
 "use strict";
-const SALT = Uint8Array.from(atob("mYxWHRI7OncirTDKG3CX/g=="), c => c.charCodeAt(0));
+const SALT = Uint8Array.from(atob("vo6YdyzYg2GIeiyBxk0C2g=="), c => c.charCodeAt(0));
 const ITER = 600000;
 const LS = {
   get(k) { try { return localStorage.getItem(k); } catch { return null; } },
@@ -193,7 +193,7 @@ const b64 = u8 => btoa(String.fromCharCode(...u8));
 const unb64 = s => Uint8Array.from(atob(s), c => c.charCodeAt(0));
 
 async function derive(pw) {
-  const base = await crypto.subtle.importKey("raw", new TextEncoder().encode(pw), "PBKDF2", false, ["deriveBits"]);
+  const base = await crypto.subtle.importKey("raw", new TextEncoder().encode(pw.normalize("NFC")), "PBKDF2", false, ["deriveBits"]);
   return new Uint8Array(await crypto.subtle.deriveBits({ name: "PBKDF2", hash: "SHA-256", salt: SALT, iterations: ITER }, base, 256));
 }
 async function decrypt(path) {
