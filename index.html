@@ -1,0 +1,420 @@
+<!doctype html>
+<html lang="cs">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow, noarchive">
+<meta name="referrer" content="no-referrer">
+<title>Návrhy letáků</title>
+<style>
+:root {
+  --bg: #f4f1ea; --surface: #fffdf8; --ink: #1b1a17; --muted: #6b665d; --line: #ddd6c8;
+  --accent: #ff9416; --accent-ink: #1b1a17; --focus: #c25e00; --danger: #b3261e; --shadow: 0 1px 3px rgba(0,0,0,.12);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #171614; --surface: #211f1c; --ink: #ece8df; --muted: #a39d92; --line: #3a3631;
+    --accent: #ff9e2c; --accent-ink: #171614; --focus: #ffb35c; --danger: #ff8a80; --shadow: 0 1px 3px rgba(0,0,0,.5);
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #171614; --surface: #211f1c; --ink: #ece8df; --muted: #a39d92; --line: #3a3631;
+  --accent: #ff9e2c; --accent-ink: #171614; --focus: #ffb35c; --danger: #ff8a80; --shadow: 0 1px 3px rgba(0,0,0,.5);
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body { margin: 0; background: var(--bg); color: var(--ink);
+  font: 16px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }
+a { color: inherit; }
+button, input, textarea { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.wrap { max-width: 1180px; margin: 0 auto; padding: 0 16px; }
+[hidden] { display: none !important; }
+
+/* lock screen */
+#lock { min-height: 100vh; display: grid; place-items: center; padding: 16px; }
+#lock form { width: 100%; max-width: 360px; background: var(--surface); border: 1px solid var(--line);
+  border-radius: 10px; padding: 28px 24px; box-shadow: var(--shadow); }
+#lock h1 { font-size: 1.25rem; margin: 0 0 4px; }
+#lock p { margin: 0 0 18px; color: var(--muted); font-size: .95rem; }
+label.field { display: block; font-size: .9rem; margin-bottom: 6px; }
+input[type=password], input[type=text], textarea { width: 100%; padding: 10px 12px; border-radius: 6px;
+  border: 1px solid var(--line); background: var(--bg); }
+.check { display: flex; gap: 8px; align-items: center; margin: 12px 0 18px; font-size: .9rem; color: var(--muted); }
+.btn { border: 0; border-radius: 6px; padding: 10px 16px; background: var(--accent); color: var(--accent-ink);
+  font-weight: 600; cursor: pointer; }
+a.btn { text-decoration: none; display: inline-block; }
+.btn:disabled { opacity: .6; cursor: progress; }
+.btn.ghost { background: transparent; color: var(--ink); border: 1px solid var(--line); font-weight: 500; }
+.err { color: var(--danger); font-size: .9rem; min-height: 1.4em; margin: 10px 0 0; }
+
+/* grid */
+header.top { padding: 28px 0 8px; }
+header.top h1 { font-size: 1.5rem; margin: 0 0 6px; line-height: 1.25; }
+header.top p { margin: 0 0 6px; color: var(--muted); max-width: 70ch; }
+.bar { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; margin: 14px 0 18px; font-size: .95rem; }
+.bar a { text-decoration: none; border-bottom: 1px solid var(--line); }
+.bar .sp { flex: 1; }
+.bar button { background: none; border: 0; padding: 0; color: var(--muted); cursor: pointer; text-decoration: underline; }
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 18px 14px;
+  padding-bottom: 48px; }
+.card { text-decoration: none; display: block; }
+.thumb { aspect-ratio: 148 / 210; background: var(--line); border-radius: 4px; overflow: hidden;
+  box-shadow: var(--shadow); position: relative; }
+.thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.card:hover .thumb { outline: 2px solid var(--accent); }
+.badge { position: absolute; right: 6px; top: 6px; background: var(--accent); color: var(--accent-ink);
+  font-size: .75rem; font-weight: 700; border-radius: 999px; padding: 1px 8px; }
+.cap { font-size: .88rem; margin-top: 6px; line-height: 1.3; }
+.cap b { margin-right: 4px; }
+
+/* detail */
+.dtop { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 16px 0 8px; }
+.dtop .sp { flex: 1; }
+.dtop h2 { width: 100%; margin: 8px 0 0; font-size: 1.4rem; line-height: 1.25; }
+.idea { margin: 4px 0 14px; color: var(--muted); }
+.sides { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.sides figure { margin: 0; }
+.sides figcaption { font-size: .8rem; color: var(--muted); margin-top: 4px; }
+.side { aspect-ratio: 148 / 210; background: var(--line); border-radius: 4px; overflow: hidden;
+  box-shadow: var(--shadow); cursor: zoom-in; display: block; width: 100%; padding: 0; border: 0; }
+.side img { width: 100%; height: 100%; object-fit: contain; display: block; }
+.file { font-size: .8rem; color: var(--muted); margin-top: 8px; overflow-wrap: anywhere; }
+section.comments { max-width: 760px; margin: 28px 0 64px; }
+section.comments h3 { font-size: 1.1rem; margin: 0 0 12px; }
+.c { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 10px 14px; margin-bottom: 10px; }
+.c .meta { font-size: .82rem; color: var(--muted); display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: baseline; }
+.c .meta b { color: var(--ink); font-size: .9rem; }
+.c .meta .old { background: var(--line); border-radius: 4px; padding: 0 6px; }
+.c .meta button { margin-left: auto; background: none; border: 0; color: var(--danger); cursor: pointer; font-size: .82rem; padding: 0; }
+.c .t { white-space: pre-wrap; overflow-wrap: anywhere; margin-top: 4px; }
+.none { color: var(--muted); }
+form.add { margin-top: 18px; display: grid; gap: 10px; }
+form.add textarea { min-height: 110px; resize: vertical; }
+form.add .row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+form.add .row input { flex: 1; min-width: 160px; }
+.hint { font-size: .82rem; color: var(--muted); }
+
+/* zoom */
+#zoom { position: fixed; inset: 0; background: rgba(0,0,0,.88); overflow: auto; z-index: 10; cursor: zoom-out;
+  display: flex; justify-content: center; align-items: flex-start; padding: 16px; }
+#zoom img { max-width: 100%; height: auto; display: block; }
+#zoom.fit img { max-height: calc(100vh - 32px); width: auto; }
+
+@media (max-width: 640px) {
+  .sides { grid-template-columns: 1fr; }
+  .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  header.top h1 { font-size: 1.25rem; }
+}
+</style>
+</head>
+<body>
+
+<main id="lock">
+  <form id="lockform" autocomplete="on">
+    <h1>Návrhy letáků</h1>
+    <p>Stránka je chráněná heslem.</p>
+    <label class="field" for="pw">Heslo</label>
+    <input type="password" id="pw" name="password" autocomplete="current-password" required autofocus>
+    <label class="check"><input type="checkbox" id="remember" checked> Zapamatovat na tomto zařízení</label>
+    <button class="btn" id="unlock" type="submit">Odemknout</button>
+    <p class="err" id="lockerr" role="alert"></p>
+  </form>
+</main>
+
+<div id="app" hidden>
+  <div id="gridview" class="wrap">
+    <header class="top">
+      <h1 id="title"></h1>
+      <p>Klikněte na návrh, prohlédněte si přední i zadní stranu a pod ně napište, co vás napadne: co funguje,
+        co ne, co je nejasné, co byste změnili. Komentáře vidí všichni, kdo mají heslo.</p>
+    </header>
+    <div class="bar">
+      <a href="#/_obecne" id="generallink">Obecné poznámky ke všem návrhům</a>
+      <span id="total" class="hint"></span>
+      <span class="sp"></span>
+      <button type="button" id="logout">Odhlásit</button>
+    </div>
+    <div class="grid" id="grid"></div>
+  </div>
+
+  <div id="detail" class="wrap" hidden>
+    <div class="dtop">
+      <a class="btn ghost" href="#/" id="back">← Všechny návrhy</a>
+      <span class="sp"></span>
+      <a class="btn ghost" id="prev" href="#/" aria-label="Předchozí návrh">←</a>
+      <a class="btn ghost" id="next" href="#/" aria-label="Další návrh">→</a>
+      <h2 id="dtitle"></h2>
+    </div>
+    <p class="idea" id="didea"></p>
+    <div class="sides" id="sides">
+      <figure><button class="side" type="button" id="front" aria-label="Přední strana, zvětšit"></button>
+        <figcaption>Přední strana (klikněte pro zvětšení)</figcaption></figure>
+      <figure><button class="side" type="button" id="backside" aria-label="Zadní strana, zvětšit"></button>
+        <figcaption>Zadní strana</figcaption></figure>
+    </div>
+    <div class="file" id="dfile"></div>
+    <section class="comments">
+      <h3>Komentáře</h3>
+      <div id="clist"></div>
+      <form class="add" id="cform">
+        <label class="field" for="ctext">Váš komentář</label>
+        <textarea id="ctext" required maxlength="5000"></textarea>
+        <div class="row">
+          <input type="text" id="cname" placeholder="Vaše jméno" aria-label="Vaše jméno" required maxlength="80" autocomplete="name">
+          <button class="btn" type="submit" id="csend">Odeslat</button>
+        </div>
+        <p class="hint">Rozepsaný text se ukládá v tomto prohlížeči. Své komentáře můžete později smazat.</p>
+        <p class="err" id="cerr" role="alert"></p>
+      </form>
+    </section>
+  </div>
+</div>
+
+<div id="zoom" class="fit" hidden title="Klikněte pro zavření, druhým klikem zvětšíte"><img alt=""></div>
+
+<script>
+"use strict";
+const SALT = Uint8Array.from(atob("mYxWHRI7OncirTDKG3CX/g=="), c => c.charCodeAt(0));
+const ITER = 600000;
+const LS = {
+  get(k) { try { return localStorage.getItem(k); } catch { return null; } },
+  set(k, v) { try { localStorage.setItem(k, v); } catch {} },
+  del(k) { try { localStorage.removeItem(k); } catch {} },
+};
+const $ = id => document.getElementById(id);
+const GENERAL = { key: "_obecne", label: "", name: "Obecné poznámky ke všem návrhům",
+  idea: "Celkový dojem, srovnání návrhů, co chybí, kterým dát přednost.", file: "" };
+
+let KEY = null, DATA = null, COMMENTS = [], current = null;
+const urls = new Map();
+
+const b64 = u8 => btoa(String.fromCharCode(...u8));
+const unb64 = s => Uint8Array.from(atob(s), c => c.charCodeAt(0));
+
+async function derive(pw) {
+  const base = await crypto.subtle.importKey("raw", new TextEncoder().encode(pw), "PBKDF2", false, ["deriveBits"]);
+  return new Uint8Array(await crypto.subtle.deriveBits({ name: "PBKDF2", hash: "SHA-256", salt: SALT, iterations: ITER }, base, 256));
+}
+async function decrypt(path) {
+  const r = await fetch(path, { cache: path.endsWith("index.bin") ? "no-cache" : "default" });
+  if (!r.ok) throw new Error("fetch " + r.status);
+  const buf = new Uint8Array(await r.arrayBuffer());
+  return crypto.subtle.decrypt({ name: "AES-GCM", iv: buf.slice(0, 12) }, KEY, buf.slice(12));
+}
+function image(path) {
+  if (!urls.has(path)) urls.set(path, decrypt(path).then(b => URL.createObjectURL(new Blob([b], { type: "image/jpeg" }))));
+  return urls.get(path);
+}
+
+async function unlock(raw, remember) {
+  KEY = await crypto.subtle.importKey("raw", raw, "AES-GCM", false, ["decrypt"]);
+  DATA = JSON.parse(new TextDecoder().decode(await decrypt("d/index.bin")));
+  if (remember) LS.set("lk", b64(raw));
+  $("lock").hidden = true;
+  $("app").hidden = false;
+  document.title = DATA.title;
+  $("title").textContent = DATA.title;
+  buildGrid();
+  route();
+  loadComments();
+  setInterval(() => { if (!document.hidden) loadComments(); }, 60000);
+}
+
+$("lockform").addEventListener("submit", async e => {
+  e.preventDefault();
+  $("unlock").disabled = true;
+  $("lockerr").textContent = "Odemykám…";
+  try {
+    await unlock(await derive($("pw").value), $("remember").checked);
+  } catch (err) {
+    KEY = null;
+    $("lockerr").textContent = err instanceof DOMException && err.name === "OperationError"
+      ? "Špatné heslo." : "Stránku se nepodařilo načíst. Zkuste to prosím znovu.";
+  } finally { $("unlock").disabled = false; }
+});
+$("logout").addEventListener("click", () => { LS.del("lk"); location.hash = ""; location.reload(); });
+
+function author() {
+  let a = LS.get("author");
+  if (!a) { a = b64(crypto.getRandomValues(new Uint8Array(18))).replace(/\+/g, "-").replace(/\//g, "_"); LS.set("author", a); }
+  return a;
+}
+function api(path, opts = {}) {
+  return fetch(DATA.api + path, { ...opts, headers: { Authorization: "Bearer " + DATA.token, "X-Author": author(),
+    ...(opts.body ? { "Content-Type": "application/json" } : {}) } });
+}
+let commentsError = false;
+async function loadComments() {
+  try {
+    const r = await api("/api/comments");
+    if (!r.ok) throw new Error(r.status);
+    COMMENTS = await r.json();
+    commentsError = false;
+  } catch { commentsError = true; }
+  updateCounts();
+  if (current) renderComments();
+}
+const forKey = k => COMMENTS.filter(c => c.design === k);
+
+function buildGrid() {
+  const grid = $("grid");
+  const io = new IntersectionObserver(entries => entries.forEach(en => {
+    if (!en.isIntersecting) return;
+    io.unobserve(en.target);
+    image(en.target.dataset.src).then(u => { en.target.src = u; });
+  }), { rootMargin: "400px" });
+  for (const it of DATA.items) {
+    const a = document.createElement("a");
+    a.className = "card"; a.href = "#/" + it.key;
+    a.innerHTML = '<div class="thumb"><img alt=""><span class="badge" hidden></span></div><div class="cap"><b></b><span></span></div>';
+    const img = a.querySelector("img");
+    img.dataset.src = it.thumb; img.alt = it.label + " " + it.name;
+    a.querySelector("b").textContent = it.label;
+    a.querySelector(".cap span").textContent = it.name;
+    a.dataset.key = it.key;
+    grid.append(a);
+    io.observe(img);
+  }
+}
+function updateCounts() {
+  for (const a of $("grid").children) {
+    const n = forKey(a.dataset.key).length, b = a.querySelector(".badge");
+    b.hidden = !n; b.textContent = n;
+  }
+  const g = forKey(GENERAL.key).length;
+  $("generallink").textContent = GENERAL.name + (g ? ` (${g})` : "");
+  $("total").textContent = commentsError ? "Komentáře se teď nepodařilo načíst." :
+    COMMENTS.length ? `Komentářů celkem: ${COMMENTS.length}` : "";
+}
+
+function route() {
+  const key = decodeURIComponent(location.hash.replace(/^#\/?/, ""));
+  const idx = DATA.items.findIndex(it => it.key === key);
+  const it = key === GENERAL.key ? GENERAL : DATA.items[idx];
+  if (!it) {
+    current = null;
+    $("detail").hidden = true; $("gridview").hidden = false;
+    document.title = DATA.title;
+    return;
+  }
+  saveDraft();
+  current = it;
+  $("gridview").hidden = true; $("detail").hidden = false;
+  document.title = (it.label ? it.label + " " : "") + it.name + " – " + DATA.title;
+  $("dtitle").textContent = (it.label ? it.label + " · " : "") + it.name;
+  $("didea").textContent = it.idea;
+  $("dfile").textContent = it.file ? "Soubor: " + it.file + ".pdf" : "";
+  $("sides").hidden = !it.file;
+  const n = DATA.items.length;
+  $("prev").hidden = $("next").hidden = !it.file;
+  if (it.file) {
+    $("prev").href = "#/" + DATA.items[(idx - 1 + n) % n].key;
+    $("next").href = "#/" + DATA.items[(idx + 1) % n].key;
+    for (const [id, path, label] of [["front", it.front, "přední"], ["backside", it.back, "zadní"]]) {
+      const btn = $(id);
+      btn.innerHTML = "";
+      const img = document.createElement("img");
+      img.alt = `${it.label} ${it.name}, ${label} strana`;
+      btn.append(img);
+      btn.dataset.src = path;
+      image(path).then(u => { if (current === it) img.src = u; });
+    }
+    const j = (idx + 1) % n;  // warm the next design's images
+    image(DATA.items[j].front); image(DATA.items[j].back);
+  }
+  $("ctext").value = LS.get("draft:" + it.key) || "";
+  $("cname").value = LS.get("name") || "";
+  $("cerr").textContent = "";
+  renderComments();
+  window.scrollTo(0, 0);
+}
+window.addEventListener("hashchange", route);
+
+function fmt(ts) {
+  return new Date(ts * 1000).toLocaleString("cs-CZ", { day: "numeric", month: "numeric", hour: "2-digit", minute: "2-digit" });
+}
+function renderComments() {
+  const list = $("clist"); list.innerHTML = "";
+  if (commentsError) { list.innerHTML = '<p class="err">Komentáře se teď nepodařilo načíst. Zkuste to prosím později.</p>'; }
+  const cs = forKey(current.key);
+  if (!cs.length && !commentsError) list.innerHTML = '<p class="none">Zatím žádné komentáře.</p>';
+  for (const c of cs) {
+    const d = document.createElement("div"); d.className = "c";
+    d.innerHTML = '<div class="meta"><b></b><span></span></div><div class="t"></div>';
+    d.querySelector("b").textContent = c.name;
+    d.querySelector(".meta span").textContent = fmt(c.ts);
+    if (current.file && c.version && c.version !== current.file) {
+      const o = document.createElement("span"); o.className = "old";
+      o.textContent = "k dřívější verzi " + c.version; d.querySelector(".meta").append(o);
+    }
+    if (c.mine) {
+      const x = document.createElement("button"); x.type = "button"; x.textContent = "Smazat";
+      x.addEventListener("click", async () => {
+        if (!confirm("Smazat tento komentář?")) return;
+        const r = await api("/api/comments/" + c.id, { method: "DELETE" }).catch(() => null);
+        if (r && (r.ok || r.status === 404)) { COMMENTS = COMMENTS.filter(y => y.id !== c.id); updateCounts(); renderComments(); }
+        else $("cerr").textContent = "Smazání se nepodařilo.";
+      });
+      d.querySelector(".meta").append(x);
+    }
+    d.querySelector(".t").textContent = c.text;
+    list.append(d);
+  }
+}
+function saveDraft() {
+  if (!current) return;
+  const v = $("ctext").value;
+  v.trim() ? LS.set("draft:" + current.key, v) : LS.del("draft:" + current.key);
+}
+$("ctext").addEventListener("input", saveDraft);
+$("cname").addEventListener("change", () => LS.set("name", $("cname").value.trim()));
+$("cform").addEventListener("submit", async e => {
+  e.preventDefault();
+  const name = $("cname").value.trim(), text = $("ctext").value.trim();
+  if (!name || !text) return;
+  LS.set("name", name);
+  $("csend").disabled = true; $("cerr").textContent = "";
+  try {
+    const r = await api("/api/comments", { method: "POST",
+      body: JSON.stringify({ design: current.key, version: current.file || "", name, text }) });
+    if (r.status === 429) throw new Error("Moc komentářů najednou, zkuste to prosím za minutu.");
+    if (!r.ok) throw new Error("Komentář se nepodařilo odeslat (" + r.status + "). Text zůstal uložený, zkuste to prosím znovu.");
+    COMMENTS.push(await r.json());
+    $("ctext").value = ""; LS.del("draft:" + current.key);
+    updateCounts(); renderComments();
+  } catch (err) {
+    $("cerr").textContent = err instanceof TypeError
+      ? "Server s komentáři neodpovídá. Text zůstal uložený, zkuste to prosím později." : err.message;
+  } finally { $("csend").disabled = false; }
+});
+
+for (const id of ["front", "backside"]) $(id).addEventListener("click", async () => {
+  const z = $("zoom");
+  z.querySelector("img").src = await image($(id).dataset.src);
+  z.classList.add("fit"); z.hidden = false;
+});
+$("zoom").addEventListener("click", e => {
+  const z = $("zoom");
+  if (z.classList.contains("fit") && e.target.tagName === "IMG") { z.classList.remove("fit"); return; }
+  z.hidden = true;
+});
+document.addEventListener("keydown", e => {
+  if (e.target.matches("input, textarea")) return;
+  if (!$("zoom").hidden) { if (e.key === "Escape") $("zoom").hidden = true; return; }
+  if (!current) return;
+  if (e.key === "Escape") location.hash = "#/";
+  else if (current.file && e.key === "ArrowLeft") location.hash = $("prev").getAttribute("href");
+  else if (current.file && e.key === "ArrowRight") location.hash = $("next").getAttribute("href");
+});
+
+(async () => {
+  const saved = LS.get("lk");
+  if (saved) {
+    try { await unlock(unb64(saved), true); return; } catch { LS.del("lk"); KEY = null; }
+  }
+  $("pw").focus();
+})();
+</script>
+</body>
+</html>
