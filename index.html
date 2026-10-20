@@ -263,7 +263,7 @@ function buildGrid() {
     if (!en.isIntersecting) return;
     io.unobserve(en.target);
     image(en.target.dataset.src).then(u => { en.target.src = u; });
-  }), { rootMargin: "400px" });
+  }), { rootMargin: "150px" });
   for (const it of DATA.items) {
     const a = document.createElement("a");
     a.className = "card"; a.href = "#/" + it.key;
@@ -318,6 +318,7 @@ function route() {
       img.alt = `${it.label} ${it.name}, ${label} strana`;
       btn.append(img);
       btn.dataset.src = path;
+      if (id === "front" && urls.has(it.thumb)) urls.get(it.thumb).then(u => { if (current === it && !img.src) img.src = u; });
       image(path).then(u => { if (current === it) img.src = u; });
     }
     const j = (idx + 1) % n;  // warm the next design's images
