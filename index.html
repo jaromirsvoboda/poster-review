@@ -144,6 +144,8 @@ form.add .row input { flex: 1; min-width: 160px; }
     </div>
     <h2 class="sect">Oblíbené<span id="nfav"></span></h2>
     <div class="grid" id="gridfav"></div>
+    <h2 class="sect" id="newhead" hidden>Nové návrhy<span id="nnew"></span></h2>
+    <div class="grid" id="gridnew" hidden></div>
     <h2 class="sect">Ostatní<span id="noth"></span></h2>
     <div class="grid" id="gridoth"></div>
   </div>
@@ -289,12 +291,14 @@ function buildGrid() {
     a.querySelector("b").textContent = it.label;
     a.querySelector(".cap span").textContent = it.name;
     a.dataset.key = it.key;
-    (it.fav ? $("gridfav") : $("gridoth")).append(a);
+    (it.fav ? $("gridfav") : it.new ? $("gridnew") : $("gridoth")).append(a);
     io.observe(img);
   }
-  const nfav = DATA.items.filter(it => it.fav).length;
+  const nfav = DATA.items.filter(it => it.fav).length, nnew = DATA.items.filter(it => it.new).length;
   $("nfav").textContent = `(${nfav})`;
-  $("noth").textContent = `(${DATA.items.length - nfav})`;
+  $("nnew").textContent = `(${nnew})`;
+  $("newhead").hidden = $("gridnew").hidden = !nnew;
+  $("noth").textContent = `(${DATA.items.length - nfav - nnew})`;
 }
 function updateCounts() {
   for (const a of document.querySelectorAll(".card")) {
