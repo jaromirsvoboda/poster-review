@@ -290,7 +290,7 @@ function buildGrid() {
     }
     a.querySelector("b").textContent = it.label;
     a.querySelector(".cap span").textContent = it.name;
-    a.dataset.key = it.key;
+    a.dataset.key = it.thread || it.key;
     (it.fav ? $("gridfav") : it.new ? $("gridnew") : $("gridoth")).append(a);
     io.observe(img);
   }
@@ -375,7 +375,7 @@ function fmt(ts) {
 function renderComments() {
   const list = $("clist"); list.innerHTML = "";
   if (commentsError) { list.innerHTML = '<p class="err">Komentáře se teď nepodařilo načíst. Zkuste to prosím později.</p>'; }
-  const cs = forKey(current.key);
+  const cs = forKey(current.thread || current.key);
   if (!cs.length && !commentsError) list.innerHTML = '<p class="none">Zatím žádné komentáře.</p>';
   for (const c of cs) {
     const d = document.createElement("div"); d.className = "c";
@@ -383,9 +383,9 @@ function renderComments() {
     d.querySelector("b").textContent = c.name;
     d.querySelector(".meta span").textContent = fmt(c.ts);
     if (currentVer && c.version && (current.versions.length > 1 || c.version !== currentVer.file)) {
-      const v = current.versions.find(v => v.file === c.version);
+      const vn = (current.vnames || {})[c.version] || (current.versions.find(v => v.file === c.version) || {}).name;
       const o = document.createElement("span"); o.className = "old";
-      o.textContent = v ? "k verzi " + v.name : "k dřívější verzi"; d.querySelector(".meta").append(o);
+      o.textContent = vn ? "k verzi " + vn : "k dřívější verzi"; d.querySelector(".meta").append(o);
     }
     if (c.mine) {
       const x = document.createElement("button"); x.type = "button"; x.textContent = "Smazat";
@@ -416,7 +416,7 @@ $("cform").addEventListener("submit", async e => {
   $("csend").disabled = true; $("cerr").textContent = "";
   try {
     const r = await api("/api/comments", { method: "POST",
-      body: JSON.stringify({ design: current.key, version: currentVer ? currentVer.file : "", name, text }) });
+      body: JSON.stringify({ design: current.thread || current.key, version: currentVer ? currentVer.file : "", name, text }) });
     if (r.status === 429) throw new Error("Moc komentářů najednou, zkuste to prosím za minutu.");
     if (!r.ok) throw new Error("Komentář se nepodařilo odeslat (" + r.status + "). Text zůstal uložený, zkuste to prosím znovu.");
     COMMENTS.push(await r.json());
