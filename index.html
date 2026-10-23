@@ -31,16 +31,9 @@ button, input, textarea { font: inherit; color: inherit; }
 .wrap { max-width: 1180px; margin: 0 auto; padding: 0 16px; }
 [hidden] { display: none !important; }
 
-/* lock screen */
-#lock { min-height: 100vh; display: grid; place-items: center; padding: 16px; }
-#lock form { width: 100%; max-width: 360px; background: var(--surface); border: 1px solid var(--line);
-  border-radius: 10px; padding: 28px 24px; box-shadow: var(--shadow); }
-#lock h1 { font-size: 1.25rem; margin: 0 0 4px; }
-#lock p { margin: 0 0 18px; color: var(--muted); font-size: .95rem; }
 label.field { display: block; font-size: .9rem; margin-bottom: 6px; }
-input[type=password], input[type=text], textarea { width: 100%; padding: 10px 12px; border-radius: 6px;
+input[type=text], textarea { width: 100%; padding: 10px 12px; border-radius: 6px;
   border: 1px solid var(--line); background: var(--bg); }
-.check { display: flex; gap: 8px; align-items: center; margin: 12px 0 18px; font-size: .9rem; color: var(--muted); }
 .btn { border: 0; border-radius: 6px; padding: 10px 16px; background: var(--accent); color: var(--accent-ink);
   font-weight: 600; cursor: pointer; }
 a.btn { text-decoration: none; display: inline-block; }
@@ -55,31 +48,44 @@ header.top p { margin: 0 0 6px; color: var(--muted); max-width: 70ch; }
 .bar { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; margin: 14px 0 18px; font-size: .95rem; }
 .bar a { text-decoration: none; border-bottom: 1px solid var(--line); }
 .bar .sp { flex: 1; }
-.bar button { background: none; border: 0; padding: 0; color: var(--muted); cursor: pointer; text-decoration: underline; }
 .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 18px 14px;
-  padding-bottom: 48px; }
-.card { text-decoration: none; display: block; }
+  padding-bottom: 48px; align-items: start; }
+.card { min-width: 0; }
+.cardlink { text-decoration: none; display: block; }
 .thumb { aspect-ratio: 148 / 210; background: var(--line); border-radius: 4px; overflow: hidden;
   box-shadow: var(--shadow); position: relative; }
 .thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
-.card:hover .thumb { outline: 2px solid var(--accent); }
+.cardlink:hover .thumb { outline: 2px solid var(--accent); }
 .badge { position: absolute; right: 6px; top: 6px; background: var(--accent); color: var(--accent-ink);
   font-size: .75rem; font-weight: 700; border-radius: 999px; padding: 1px 8px; }
 .cap { font-size: .88rem; margin-top: 6px; line-height: 1.3; }
-.cap b { margin-right: 4px; }
 h2.sect { font-size: 1.1rem; margin: 22px 0 12px; }
 h2.sect span { color: var(--muted); font-weight: 400; font-size: .9rem; margin-left: 4px; }
-.vchip { position: absolute; left: 6px; bottom: 6px; background: rgba(17,17,17,.8); color: #fff; font-size: .72rem;
-  font-weight: 600; border-radius: 4px; padding: 1px 6px; }
-.vtabs { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 14px; }
-.vtabs a { text-decoration: none; border: 1px solid var(--line); border-radius: 999px; padding: 4px 12px; font-size: .9rem; }
-.vtabs a[aria-current="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+.variants { margin-top: 8px; padding: 6px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); }
+.variants p { margin: 0 0 6px; font-size: .82rem; line-height: 1.3; font-weight: 700; }
+.version-previews { display: grid; gap: 4px; }
+.version-previews a { position: relative; display: block; border-radius: 3px; overflow: hidden;
+  min-height: 44px; background: var(--line); }
+.version-previews img { display: block; width: 100%; aspect-ratio: 148 / 210; object-fit: cover; }
+.version-previews span { position: absolute; bottom: 2px; left: 2px; border-radius: 3px; padding: 0 4px;
+  background: #1b1a17; color: #fff; font-size: .72rem; font-weight: 700; }
+.version-previews a:hover { outline: 2px solid var(--accent); }
 
 /* detail */
 .dtop { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 16px 0 8px; }
 .dtop .sp { flex: 1; }
 .dtop h2 { width: 100%; margin: 8px 0 0; font-size: 1.4rem; line-height: 1.25; }
 .idea { margin: 4px 0 14px; color: var(--muted); }
+.version-panel { margin-bottom: 18px; padding: 10px; border: 1px solid var(--line); border-radius: 8px;
+  background: var(--surface); }
+.version-panel p { font-weight: 700; margin: 0 0 10px; line-height: 1.35; }
+.version-strip { display: flex; flex-wrap: wrap; gap: 8px; }
+.version-strip a { flex: 0 0 92px; text-decoration: none; border: 2px solid var(--line); border-radius: 6px;
+  padding: 4px; font-size: .82rem; line-height: 1.25; }
+.version-strip img { display: block; width: 100%; height: 88px; object-fit: contain; background: var(--line); }
+.version-strip span { display: block; margin-top: 5px; }
+.version-strip a[aria-current="true"] { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); font-weight: 700; }
+.version-strip a:hover { border-color: var(--focus); }
 .sides { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
 .sides figure { margin: 0; }
 .sides figcaption { font-size: .8rem; color: var(--muted); margin-top: 4px; }
@@ -117,30 +123,21 @@ form.add .row input { flex: 1; min-width: 160px; }
 </head>
 <body>
 
-<main id="lock">
-  <form id="lockform" autocomplete="on">
-    <h1>Návrhy letáků</h1>
-    <p>Stránka je chráněná heslem.</p>
-    <label class="field" for="pw">Heslo</label>
-    <input type="password" id="pw" name="password" autocomplete="current-password" required autofocus>
-    <label class="check"><input type="checkbox" id="remember" checked> Zapamatovat na tomto zařízení</label>
-    <button class="btn" id="unlock" type="submit">Odemknout</button>
-    <p class="err" id="lockerr" role="alert"></p>
-  </form>
-</main>
-
-<div id="app" hidden>
+<main id="app">
   <div id="gridview" class="wrap">
     <header class="top">
-      <h1 id="title"></h1>
+      <h1 id="title">Letáky EA Česko – návrhy k připomínkám</h1>
       <p>Klikněte na návrh, prohlédněte si přední i zadní stranu a pod ně napište, co vás napadne: co funguje,
-        co ne, co je nejasné, co byste změnili. Komentáře vidí všichni, kdo mají heslo.</p>
+        co ne, co je nejasné, co byste změnili. Galerie i komentáře jsou veřejné.</p>
+      <p id="designcount"></p>
+      <p class="hint">Návrhy s více verzemi mají pod obrázkem malé náhledy. Kliknutím otevřete vybranou verzi.</p>
     </header>
+    <p id="loadstatus" role="status">Načítám návrhy…</p>
+    <button class="btn" id="retry" type="button" hidden>Zkusit znovu</button>
     <div class="bar">
       <a href="#/_obecne" id="generallink">Obecné poznámky ke všem návrhům</a>
       <span id="total" class="hint"></span>
       <span class="sp"></span>
-      <button type="button" id="logout">Odhlásit</button>
     </div>
     <h2 class="sect">Oblíbené<span id="nfav"></span></h2>
     <div class="grid" id="gridfav"></div>
@@ -159,7 +156,10 @@ form.add .row input { flex: 1; min-width: 160px; }
       <h2 id="dtitle"></h2>
     </div>
     <p class="idea" id="didea"></p>
-    <nav class="vtabs" id="vtabs" aria-label="Verze návrhu" hidden></nav>
+    <div class="version-panel" id="versionpanel" hidden>
+      <p id="versionstatus" role="status" aria-live="polite" aria-atomic="true"></p>
+      <nav class="version-strip" id="vstrip" aria-label="Verze návrhu"></nav>
+    </div>
     <div class="sides" id="sides">
       <figure><button class="side" type="button" id="front" aria-label="Přední strana, zvětšit"></button>
         <figcaption>Přední strana (klikněte pro zvětšení)</figcaption></figure>
@@ -182,14 +182,12 @@ form.add .row input { flex: 1; min-width: 160px; }
       </form>
     </section>
   </div>
-</div>
+</main>
 
 <div id="zoom" class="fit" hidden title="Klikněte pro zavření, druhým klikem zvětšíte"><img alt=""></div>
 
 <script>
 "use strict";
-const SALT = Uint8Array.from(atob("vo6YdyzYg2GIeiyBxk0C2g=="), c => c.charCodeAt(0));
-const ITER = 600000;
 const LS = {
   get(k) { try { return localStorage.getItem(k); } catch { return null; } },
   set(k, v) { try { localStorage.setItem(k, v); } catch {} },
@@ -199,54 +197,30 @@ const $ = id => document.getElementById(id);
 const GENERAL = { key: "_obecne", label: "", name: "Obecné poznámky ke všem návrhům",
   idea: "Celkový dojem, srovnání návrhů, co chybí, kterým dát přednost." };
 
-let KEY = null, DATA = null, COMMENTS = [], current = null, currentVer = null;
-const urls = new Map();
+LS.del("lk"); // Retire the remembered key from the former password-protected gallery.
+let DATA = null, COMMENTS = [], current = null, currentVer = null;
 
 const b64 = u8 => btoa(String.fromCharCode(...u8));
-const unb64 = s => Uint8Array.from(atob(s), c => c.charCodeAt(0));
-
-async function derive(pw) {
-  const base = await crypto.subtle.importKey("raw", new TextEncoder().encode(pw.normalize("NFC")), "PBKDF2", false, ["deriveBits"]);
-  return new Uint8Array(await crypto.subtle.deriveBits({ name: "PBKDF2", hash: "SHA-256", salt: SALT, iterations: ITER }, base, 256));
-}
-async function decrypt(path) {
-  const r = await fetch(path, { cache: path.endsWith("index.bin") ? "no-cache" : "default" });
-  if (!r.ok) throw new Error("fetch " + r.status);
-  const buf = new Uint8Array(await r.arrayBuffer());
-  return crypto.subtle.decrypt({ name: "AES-GCM", iv: buf.slice(0, 12) }, KEY, buf.slice(12));
-}
-function image(path) {
-  if (!urls.has(path)) urls.set(path, decrypt(path).then(b => URL.createObjectURL(new Blob([b], { type: "image/jpeg" }))));
-  return urls.get(path);
-}
-
-async function unlock(raw, remember) {
-  KEY = await crypto.subtle.importKey("raw", raw, "AES-GCM", false, ["decrypt"]);
-  DATA = JSON.parse(new TextDecoder().decode(await decrypt("d/index.bin")));
-  if (remember) LS.set("lk", b64(raw));
-  $("lock").hidden = true;
-  $("app").hidden = false;
-  document.title = DATA.title;
-  $("title").textContent = DATA.title;
-  buildGrid();
-  route();
-  loadComments();
-  setInterval(() => { if (!document.hidden) loadComments(); }, 60000);
-}
-
-$("lockform").addEventListener("submit", async e => {
-  e.preventDefault();
-  $("unlock").disabled = true;
-  $("lockerr").textContent = "Odemykám…";
+async function loadGallery() {
+  $("retry").hidden = true;
+  $("loadstatus").textContent = "Načítám návrhy…";
   try {
-    await unlock(await derive($("pw").value), $("remember").checked);
-  } catch (err) {
-    KEY = null;
-    $("lockerr").textContent = err instanceof DOMException && err.name === "OperationError"
-      ? "Špatné heslo." : "Stránku se nepodařilo načíst. Zkuste to prosím znovu.";
-  } finally { $("unlock").disabled = false; }
-});
-$("logout").addEventListener("click", () => { LS.del("lk"); location.hash = ""; location.reload(); });
+    const r = await fetch("data.json", { cache: "no-cache" });
+    if (!r.ok) throw new Error(r.status);
+    DATA = await r.json();
+    document.title = DATA.title;
+    $("title").textContent = DATA.title;
+    buildGrid();
+    $("loadstatus").hidden = true;
+    route();
+    loadComments();
+    setInterval(() => { if (!document.hidden) loadComments(); }, 60000);
+  } catch {
+    $("loadstatus").textContent = "Návrhy se nepodařilo načíst. Zkuste to prosím znovu.";
+    $("retry").hidden = false;
+  }
+}
+$("retry").addEventListener("click", loadGallery);
 
 function author() {
   let a = LS.get("author");
@@ -272,33 +246,50 @@ const forKey = k => COMMENTS.filter(c => c.design === k);
 
 const versionsWord = n => n < 5 ? "verze" : "verzí";
 function buildGrid() {
-  const io = new IntersectionObserver(entries => entries.forEach(en => {
-    if (!en.isIntersecting) return;
-    io.unobserve(en.target);
-    image(en.target.dataset.src).then(u => { en.target.src = u; });
-  }), { rootMargin: "150px" });
   for (const it of DATA.items) {
+    const card = document.createElement("article");
+    card.className = "card"; card.dataset.key = it.thread || it.key;
+    card.dataset.design = it.key;
     const a = document.createElement("a");
-    a.className = "card"; a.href = "#/" + it.key;
-    a.innerHTML = '<div class="thumb"><img alt=""><span class="badge" hidden></span></div><div class="cap"><b></b><span></span></div>';
+    a.className = "cardlink"; a.href = "#/" + it.key;
+    a.innerHTML = '<div class="thumb"><img alt=""><span class="badge" hidden></span></div><div class="cap"><span></span></div>';
     const img = a.querySelector("img");
-    img.dataset.src = it.versions[0].thumb; img.alt = it.label + " " + it.name;
-    if (it.versions.length > 1) {
-      const chip = document.createElement("span"); chip.className = "vchip";
-      chip.textContent = `${it.versions.length} ${versionsWord(it.versions.length)}`;
-      a.querySelector(".thumb").append(chip);
-    }
-    a.querySelector("b").textContent = it.label;
+    img.src = it.versions[0].thumb; img.alt = it.name;
+    img.loading = "lazy"; img.decoding = "async";
     a.querySelector(".cap span").textContent = it.name;
-    a.dataset.key = it.thread || it.key;
-    (it.fav ? $("gridfav") : it.new ? $("gridnew") : $("gridoth")).append(a);
-    io.observe(img);
+    card.append(a);
+    if (it.versions.length > 1) {
+      const panel = document.createElement("div"); panel.className = "variants";
+      const label = document.createElement("p");
+      label.textContent = `${it.versions.length} ${versionsWord(it.versions.length)} · vyberte náhled`;
+      const previews = document.createElement("nav"); previews.className = "version-previews";
+      previews.setAttribute("aria-label", `Verze návrhu ${it.name}`);
+      previews.style.gridTemplateColumns = `repeat(${Math.min(3, it.versions.length)}, minmax(0, 1fr))`;
+      it.versions.forEach((v, i) => previews.append(versionLink(it, v, i)));
+      panel.append(label, previews); card.append(panel);
+    }
+    (it.fav ? $("gridfav") : it.new ? $("gridnew") : $("gridoth")).append(card);
   }
   const nfav = DATA.items.filter(it => it.fav).length, nnew = DATA.items.filter(it => it.new).length;
   $("nfav").textContent = `(${nfav})`;
   $("nnew").textContent = `(${nnew})`;
   $("newhead").hidden = $("gridnew").hidden = !nnew;
   $("noth").textContent = `(${DATA.items.length - nfav - nnew})`;
+  const designs = new Set(DATA.items.map(it => it.thread || it.key)).size;
+  const versions = DATA.items.reduce((n, it) => n + it.versions.length, 0);
+  $("designcount").textContent = `${designs} návrhů · ${versions} ${versionsWord(versions)}`;
+}
+function versionLink(it, v, i, detail = false) {
+  const a = document.createElement("a");
+  a.href = `#/${it.key}/${i + 1}`;
+  a.setAttribute("aria-label", `${it.name} · ${v.name}, verze ${i + 1} ze ${it.versions.length}`);
+  a.title = v.name;
+  const img = document.createElement("img");
+  img.src = v.thumb; img.alt = ""; img.loading = detail ? "eager" : "lazy"; img.decoding = "async";
+  const name = document.createElement("span");
+  name.textContent = detail ? `${i + 1}. ${v.name}` : i + 1;
+  a.append(img, name);
+  return a;
 }
 function updateCounts() {
   for (const a of document.querySelectorAll(".card")) {
@@ -312,6 +303,7 @@ function updateCounts() {
 }
 
 function route() {
+  if (!DATA) return;
   const [key, vpart] = decodeURIComponent(location.hash.replace(/^#\/?/, "")).split("/");
   const idx = DATA.items.findIndex(it => it.key === key);
   const it = key === GENERAL.key ? GENERAL : DATA.items[idx];
@@ -327,19 +319,21 @@ function route() {
   const ver = it.versions ? it.versions[vi] : null;
   current = it; currentVer = ver;
   $("gridview").hidden = true; $("detail").hidden = false;
-  document.title = (it.label ? it.label + " " : "") + it.name + " – " + DATA.title;
-  $("dtitle").textContent = (it.label ? it.label + " · " : "") + it.name;
+  document.title = it.name + " – " + DATA.title;
+  $("dtitle").textContent = it.name;
   $("didea").textContent = it.idea;
   $("dfile").textContent = ver ? "Soubor: " + ver.file + ".pdf" : "";
   $("sides").hidden = !ver;
-  const tabs = $("vtabs"); tabs.innerHTML = "";
-  tabs.hidden = !ver || it.versions.length < 2;
-  if (!tabs.hidden) it.versions.forEach((v, i) => {
-    const a = document.createElement("a");
-    a.href = `#/${it.key}/${i + 1}`; a.textContent = v.name;
+  const strip = $("vstrip"), refocus = strip.contains(document.activeElement);
+  strip.innerHTML = "";
+  $("versionpanel").hidden = !ver || it.versions.length < 2;
+  $("versionstatus").textContent = ver ? `Verze ${vi + 1} ze ${it.versions.length}: ${ver.name}` : "";
+  if (!$("versionpanel").hidden) it.versions.forEach((v, i) => {
+    const a = versionLink(it, v, i, true);
     a.setAttribute("aria-current", String(i === vi));
-    tabs.append(a);
+    strip.append(a);
   });
+  if (refocus) strip.querySelector('[aria-current="true"]')?.focus({ preventScroll: true });
   const n = DATA.items.length;
   $("prev").hidden = $("next").hidden = !ver;
   if (ver) {
@@ -349,15 +343,11 @@ function route() {
       const btn = $(id);
       btn.innerHTML = "";
       const img = document.createElement("img");
-      img.alt = `${it.label} ${it.name}, ${label} strana`;
+      img.alt = `${it.name}, ${label} strana`;
       btn.append(img);
       btn.dataset.src = path;
-      if (id === "front" && urls.has(ver.thumb)) urls.get(ver.thumb).then(u => { if (currentVer === ver && !img.src) img.src = u; });
-      image(path).then(u => { if (currentVer === ver) img.src = u; });
+      img.src = path;
     }
-    const j = (idx + 1) % n;  // warm the next design's images
-    image(DATA.items[j].versions[0].front); image(DATA.items[j].versions[0].back);
-    for (const v of it.versions) if (v !== ver) { image(v.front); image(v.back); }  // the other tabs
   }
   if (!same) {
     $("ctext").value = LS.get("draft:" + it.key) || "";
@@ -368,6 +358,13 @@ function route() {
   renderComments();
 }
 window.addEventListener("hashchange", route);
+$("vstrip").addEventListener("keydown", e => {
+  if (!["ArrowLeft", "ArrowRight"].includes(e.key)) return;
+  const links = [...$("vstrip").querySelectorAll("a")], i = links.indexOf(document.activeElement);
+  if (i < 0) return;
+  e.preventDefault(); e.stopPropagation();
+  links[(i + (e.key === "ArrowRight" ? 1 : -1) + links.length) % links.length].focus();
+});
 
 function fmt(ts) {
   return new Date(ts * 1000).toLocaleString("cs-CZ", { day: "numeric", month: "numeric", hour: "2-digit", minute: "2-digit" });
@@ -428,9 +425,9 @@ $("cform").addEventListener("submit", async e => {
   } finally { $("csend").disabled = false; }
 });
 
-for (const id of ["front", "backside"]) $(id).addEventListener("click", async () => {
+for (const id of ["front", "backside"]) $(id).addEventListener("click", () => {
   const z = $("zoom");
-  z.querySelector("img").src = await image($(id).dataset.src);
+  z.querySelector("img").src = $(id).dataset.src;
   z.classList.add("fit"); z.hidden = false;
 });
 $("zoom").addEventListener("click", e => {
@@ -447,13 +444,7 @@ document.addEventListener("keydown", e => {
   else if (currentVer && e.key === "ArrowRight") location.hash = $("next").getAttribute("href");
 });
 
-(async () => {
-  const saved = LS.get("lk");
-  if (saved) {
-    try { await unlock(unb64(saved), true); return; } catch { LS.del("lk"); KEY = null; }
-  }
-  $("pw").focus();
-})();
+loadGallery();
 </script>
 </body>
 </html>
