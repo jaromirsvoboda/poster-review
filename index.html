@@ -22,7 +22,7 @@
   --accent: #ff9e2c; --accent-ink: #171614; --focus: #ffb35c; --danger: #ff8a80; --shadow: 0 1px 3px rgba(0,0,0,.5);
 }
 * { box-sizing: border-box; }
-html { -webkit-text-size-adjust: 100%; }
+html { -webkit-text-size-adjust: 100%; scrollbar-gutter: stable; }  /* no sideways jump when the scrollbar comes and goes */
 body { margin: 0; background: var(--bg); color: var(--ink);
   font: 16px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }
 a { color: inherit; }
@@ -439,9 +439,14 @@ document.addEventListener("keydown", e => {
   if (e.target.matches("input, textarea")) return;
   if (!$("zoom").hidden) { if (e.key === "Escape") $("zoom").hidden = true; return; }
   if (!current) return;
-  if (e.key === "Escape") location.hash = "#/";
-  else if (currentVer && e.key === "ArrowLeft") location.hash = $("prev").getAttribute("href");
-  else if (currentVer && e.key === "ArrowRight") location.hash = $("next").getAttribute("href");
+  if (e.altKey || e.ctrlKey || e.metaKey || e.shiftKey) return;  // leave browser shortcuts (Alt+← = back) alone
+  let to = null;
+  if (e.key === "Escape") to = "#/";
+  else if (currentVer && e.key === "ArrowLeft") to = $("prev").getAttribute("href");
+  else if (currentVer && e.key === "ArrowRight") to = $("next").getAttribute("href");
+  if (to === null) return;
+  e.preventDefault();  // otherwise the browser also scrolls the page sideways (owner 2026-10-24)
+  location.hash = to;
 });
 
 loadGallery();
