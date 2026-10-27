@@ -26,7 +26,7 @@ html { -webkit-text-size-adjust: 100%; scrollbar-gutter: stable; }  /* no sidewa
 body { margin: 0; background: var(--bg); color: var(--ink);
   font: 16px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }
 a { color: inherit; }
-button, input, textarea { font: inherit; color: inherit; }
+button, input, textarea, select { font: inherit; color: inherit; }
 :focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
 .wrap { max-width: 1180px; margin: 0 auto; padding: 0 16px; }
 [hidden] { display: none !important; }
@@ -70,6 +70,22 @@ h2.sect span { color: var(--muted); font-weight: 400; font-size: .9rem; margin-l
 .version-previews span { position: absolute; bottom: 2px; left: 2px; border-radius: 3px; padding: 0 4px;
   background: #1b1a17; color: #fff; font-size: .72rem; font-weight: 700; }
 .version-previews a:hover { outline: 2px solid var(--accent); }
+.round-controls { position: sticky; top: 0; z-index: 2; background: var(--surface); border: 1px solid var(--line);
+  border-radius: 8px; padding: 10px; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.round-picker { display: flex; align-items: center; gap: 6px; width: 100%; min-width: 0; }
+.round-picker select { flex: 1; min-width: 0; width: 0; padding: 8px 4px; background: var(--bg);
+  border: 1px solid var(--line); border-radius: 4px; }
+.round-picker .btn { padding: 8px 10px; }
+.round-picker .btn:disabled { cursor: default; }
+.round-controls label, .compare-control { font-size: .9rem; }
+.archive { background: var(--surface); border-left: 4px solid var(--accent); padding: 10px 12px; margin: 12px 0; }
+.archive a { display: inline-block; margin-left: 8px; }
+.round-badges { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; font-size: .72rem; }
+.round-badges span, .round-tag { background: var(--line); border-radius: 4px; padding: 1px 5px; }
+.round-badges .changed { background: var(--accent); color: var(--accent-ink); }
+.round-badges .later { color: var(--muted); background: transparent; padding-left: 0; }
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden;
+  clip-path: inset(50%); white-space: nowrap; }
 
 /* detail */
 .dtop { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 16px 0 8px; }
@@ -93,6 +109,19 @@ h2.sect span { color: var(--muted); font-weight: 400; font-size: .9rem; margin-l
   box-shadow: var(--shadow); cursor: zoom-in; display: block; width: 100%; padding: 0; border: 0; }
 .side img { width: 100%; height: 100%; object-fit: contain; display: block; }
 .file { font-size: .8rem; color: var(--muted); margin-top: 8px; overflow-wrap: anywhere; }
+.round-panel { margin-bottom: 16px; }
+.round-panel p { margin: 0 0 8px; }
+.timeline { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+.timeline a, .timeline .removed { max-width: 100%; padding: 6px 9px; border: 1px solid var(--line);
+  border-radius: 6px; background: var(--surface); font-size: .8rem; text-decoration: none; overflow-wrap: anywhere; }
+.timeline a[aria-current="true"] { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); font-weight: 700; }
+.timeline .removed { color: var(--danger); }
+.compare-control { display: flex; gap: 6px; align-items: center; }
+.compare-labels { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; font-size: .85rem; margin-bottom: 8px; }
+.compare-images { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.compare-images figure { margin: 0; min-width: 0; }
+.compare-slider { display: none; }
+.c.in-round { border-left: 4px solid var(--accent); }
 section.comments { max-width: 760px; margin: 28px 0 64px; }
 section.comments h3 { font-size: 1.1rem; margin: 0 0 12px; }
 .c { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 10px 14px; margin-bottom: 10px; }
@@ -119,11 +148,24 @@ form.add .row input { flex: 1; min-width: 160px; }
   .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   header.top h1 { font-size: 1.25rem; }
 }
+@media (max-width: 600px) {
+  .compare-images { display: block; position: relative; touch-action: pan-y; --split: 50%; }
+  .compare-images .compare-before { position: absolute; inset: 0; z-index: 1;
+    clip-path: inset(0 calc(100% - var(--split)) 0 0); }
+  .compare-images::after { content: ""; position: absolute; top: 0; bottom: 0; left: var(--split); width: 2px;
+    background: var(--accent); z-index: 1; pointer-events: none; }
+  .compare-images .side { pointer-events: none; }
+  .compare-slider { display: grid; gap: 4px; margin: 10px 0; font-size: .85rem; }
+  .compare-slider input { width: 100%; accent-color: var(--accent); }
+}
 </style>
 </head>
 <body>
 
 <main id="app">
+  <p id="roundstatus" class="sr-only" role="status" aria-live="polite" aria-atomic="true"></p>
+  <div class="wrap" id="routeerror" hidden><p class="err" id="routeerrortext" role="alert"></p>
+    <button class="btn" id="roundretry" type="button">Zkusit znovu</button></div>
   <div id="gridview" class="wrap">
     <header class="top">
       <h1 id="title">Letáky EA Česko – návrhy k připomínkám</h1>
@@ -132,6 +174,19 @@ form.add .row input { flex: 1; min-width: 160px; }
       <p id="designcount"></p>
       <p class="hint">Návrhy s více verzemi mají pod obrázkem malé náhledy. Kliknutím otevřete vybranou verzi.</p>
     </header>
+    <div class="round-controls" id="roundcontrols" hidden>
+      <div class="round-picker">
+        <label for="roundselect">Kolo:</label>
+        <button class="btn ghost" id="roundprev" type="button" aria-label="Předchozí kolo">◀</button>
+        <select id="roundselect" aria-label="Kolo recenze"></select>
+        <button class="btn ghost" id="roundnext" type="button" aria-label="Další kolo">▶</button>
+      </div>
+      <label><input id="changesonly" type="checkbox"> jen změny tohoto kola</label>
+      <span class="hint">Klávesy [ a ] mění kolo.</span>
+    </div>
+    <div class="archive" id="gridarchive" hidden></div>
+    <p class="hint" id="notyet" hidden></p>
+    <p class="none" id="nochanges" hidden>V tomto kole se žádný z přítomných návrhů nezměnil.</p>
     <p id="loadstatus" role="status">Načítám návrhy…</p>
     <button class="btn" id="retry" type="button" hidden>Zkusit znovu</button>
     <div class="bar">
@@ -159,6 +214,24 @@ form.add .row input { flex: 1; min-width: 160px; }
     <div class="version-panel" id="versionpanel" hidden>
       <p id="versionstatus" role="status" aria-live="polite" aria-atomic="true"></p>
       <nav class="version-strip" id="vstrip" aria-label="Verze návrhu"></nav>
+    </div>
+    <div class="archive" id="detailarchive" hidden></div>
+    <p class="hint" id="roundnote" hidden></p>
+    <div class="round-panel" id="roundpanel" hidden>
+      <p id="detailround"></p>
+      <nav class="timeline" id="timeline" aria-label="Kola změn tohoto návrhu"></nav>
+      <label class="compare-control"><input id="comparetoggle" type="checkbox"> Porovnat s předchozím kolem</label>
+      <p class="hint" id="comparestatus" role="status"></p>
+    </div>
+    <div id="comparison" hidden>
+      <div class="compare-labels"><span id="compareprevlabel"></span><span id="comparenowlabel"></span></div>
+      <div class="compare-images" id="compareimages">
+        <figure class="compare-before"><button class="side" type="button" id="comparebefore"></button></figure>
+        <figure><button class="side" type="button" id="comparenow"></button></figure>
+      </div>
+      <label class="compare-slider" for="compareslider">Tažením porovnejte: vlevo dřívější, vpravo zobrazené kolo
+        <input id="compareslider" type="range" min="0" max="100" value="50" aria-label="Podíl dřívějšího kola v porovnání">
+      </label>
     </div>
     <div class="sides" id="sides">
       <figure><button class="side" type="button" id="front" aria-label="Přední strana, zvětšit"></button>
@@ -199,6 +272,52 @@ const GENERAL = { key: "_obecne", label: "", name: "Obecné poznámky ke všem n
 
 LS.del("lk"); // Retire the remembered key from the former password-protected gallery.
 let DATA = null, COMMENTS = [], current = null, currentVer = null;
+let gridRound = null, detailRound = null, gridItems = [], routeSerial = 0, compareSerial = 0, switchSerial = 0;
+const roundCache = new Map(), roundLoads = new Map();
+const roundIndex = id => DATA.rounds.findIndex(r => r.id === id);
+const roundDate = r => new Date(r.date).toLocaleDateString("cs-CZ", { day: "numeric", month: "numeric" });
+const roundLabel = id => {
+  const r = DATA.rounds[roundIndex(id)];
+  return `${roundIndex(id) + 1} · ${roundDate(r)} – ${r.label}`;
+};
+const roundSuffix = id => id === DATA.current ? "" : "@" + id;
+const gridHash = id => id === DATA.current ? "#/" : "#@" + id;
+const detailHash = (key, n, id) => `#/${encodeURIComponent(key)}/${n}${roundSuffix(id)}`;
+const change = (id, key) => (DATA.changes[id] || {})[key];
+
+async function roundItems(id) {
+  if (roundCache.has(id)) return roundCache.get(id);
+  if (!roundLoads.has(id)) {
+    const pending = (async () => {
+      const r = await fetch(`hist/${encodeURIComponent(id)}.json`, { cache: "no-cache" });
+      if (!r.ok) throw new Error(r.status);
+      const data = await r.json();
+      roundCache.set(id, data.items);
+      return data.items;
+    })();
+    roundLoads.set(id, pending);
+  }
+  try { return await roundLoads.get(id); }
+  finally { roundLoads.delete(id); }
+}
+function existsAt(key, id) {
+  let exists = false;
+  for (const r of DATA.rounds.slice(0, roundIndex(id) + 1)) {
+    const c = change(r.id, key);
+    if (c) exists = c !== "removed";
+  }
+  return exists;
+}
+function archive(id, round, key = null) {
+  const box = $(id); box.replaceChildren(); box.hidden = round === DATA.current;
+  if (box.hidden) return;
+  box.append(`Archiv · kolo ${roundLabel(round)}. `);
+  const a = document.createElement("a"); a.textContent = "← zpět na aktuální";
+  const hasCurrent = key && (key === GENERAL.key || DATA.items.some(it => it.key === key));
+  a.href = hasCurrent ? detailHash(key, 1, DATA.current) : gridHash(DATA.current);
+  if (hasCurrent) a.addEventListener("click", e => { e.preventDefault(); switchDetailRound(DATA.current); });
+  box.append(a);
+}
 
 const b64 = u8 => btoa(String.fromCharCode(...u8));
 async function loadGallery() {
@@ -208,11 +327,19 @@ async function loadGallery() {
     const r = await fetch("data.json", { cache: "no-cache" });
     if (!r.ok) throw new Error(r.status);
     DATA = await r.json();
+    gridRound = detailRound = DATA.current;
+    roundCache.clear(); roundLoads.clear(); roundCache.set(DATA.current, DATA.items);
     document.title = DATA.title;
     $("title").textContent = DATA.title;
-    buildGrid();
+    $("roundselect").replaceChildren();
+    for (const round of DATA.rounds) {
+      const option = document.createElement("option"); option.value = round.id;
+      option.textContent = `${roundLabel(round.id)}${round.id === DATA.current ? " (aktuální)" : ""} · změněno ${Object.keys(DATA.changes[round.id] || {}).length}`;
+      $("roundselect").append(option);
+    }
+    $("roundcontrols").hidden = false;
     $("loadstatus").hidden = true;
-    route();
+    await route();
     loadComments();
     setInterval(() => { if (!document.hidden) loadComments(); }, 60000);
   } catch {
@@ -246,18 +373,31 @@ const forKey = k => COMMENTS.filter(c => c.design === k);
 
 const versionsWord = n => n < 5 ? "verze" : "verzí";
 function buildGrid() {
-  for (const it of DATA.items) {
+  for (const id of ["gridfav", "gridnew", "gridoth"]) $(id).replaceChildren();
+  const items = gridItems.filter(it => !$("changesonly").checked || ["new", "changed"].includes(change(gridRound, it.key)));
+  for (const it of items) {
     const card = document.createElement("article");
     card.className = "card"; card.dataset.key = it.thread || it.key;
     card.dataset.design = it.key;
     const a = document.createElement("a");
-    a.className = "cardlink"; a.href = "#/" + it.key;
+    a.className = "cardlink"; a.href = detailHash(it.key, 1, gridRound);
     a.innerHTML = '<div class="thumb"><img alt=""><span class="badge" hidden></span></div><div class="cap"><span></span></div>';
     const img = a.querySelector("img");
     img.src = it.versions[0].thumb; img.alt = it.name;
     img.loading = "lazy"; img.decoding = "async";
     a.querySelector(".cap span").textContent = it.name;
     card.append(a);
+    const badges = document.createElement("div"); badges.className = "round-badges";
+    const badge = (text, cls = "") => {
+      const span = document.createElement("span"); span.textContent = text; span.className = cls; badges.append(span);
+    };
+    const c = change(gridRound, it.key);
+    if (c === "new") badge("nové", "changed");
+    if (c === "changed") badge("upraveno v tomto kole", "changed");
+    if (!DATA.items.some(now => now.key === it.key)) badge("později odstraněno");
+    if (DATA.rounds.slice(roundIndex(gridRound) + 1).some(r => ["new", "changed"].includes(change(r.id, it.key))))
+      badge("později změněno", "later");
+    if (badges.childElementCount) card.append(badges);
     if (it.versions.length > 1) {
       const panel = document.createElement("div"); panel.className = "variants";
       const label = document.createElement("p");
@@ -265,23 +405,36 @@ function buildGrid() {
       const previews = document.createElement("nav"); previews.className = "version-previews";
       previews.setAttribute("aria-label", `Verze návrhu ${it.name}`);
       previews.style.gridTemplateColumns = `repeat(${Math.min(3, it.versions.length)}, minmax(0, 1fr))`;
-      it.versions.forEach((v, i) => previews.append(versionLink(it, v, i)));
+      it.versions.forEach((v, i) => previews.append(versionLink(it, v, i, false, gridRound)));
       panel.append(label, previews); card.append(panel);
     }
     (it.fav ? $("gridfav") : it.new ? $("gridnew") : $("gridoth")).append(card);
   }
-  const nfav = DATA.items.filter(it => it.fav).length, nnew = DATA.items.filter(it => it.new).length;
+  const nfav = items.filter(it => it.fav).length, nnew = items.filter(it => !it.fav && it.new).length;
   $("nfav").textContent = `(${nfav})`;
   $("nnew").textContent = `(${nnew})`;
   $("newhead").hidden = $("gridnew").hidden = !nnew;
-  $("noth").textContent = `(${DATA.items.length - nfav - nnew})`;
-  const designs = new Set(DATA.items.map(it => it.thread || it.key)).size;
-  const versions = DATA.items.reduce((n, it) => n + it.versions.length, 0);
+  $("noth").textContent = `(${items.length - nfav - nnew})`;
+  const designs = new Set(items.map(it => it.thread || it.key)).size;
+  const versions = items.reduce((n, it) => n + it.versions.length, 0);
   $("designcount").textContent = `${designs} návrhů · ${versions} ${versionsWord(versions)}`;
+  $("nochanges").hidden = !!items.length;
+  $("roundselect").value = gridRound;
+  $("roundprev").disabled = roundIndex(gridRound) === 0;
+  $("roundnext").disabled = gridRound === DATA.current;
+  const future = new Set(DATA.rounds.slice(roundIndex(gridRound) + 1).flatMap(r =>
+    Object.keys(DATA.changes[r.id] || {}).filter(k => change(r.id, k) === "new" && !gridItems.some(it => it.key === k))));
+  $("notyet").hidden = !future.size;
+  const n = future.size;
+  $("notyet").textContent = n === 1 ? "1 návrh v tomto kole ještě neexistoval." :
+    n < 5 ? `${n} návrhy v tomto kole ještě neexistovaly.` : `${n} návrhů v tomto kole ještě neexistovalo.`;
+  $("generallink").href = detailHash(GENERAL.key, 1, gridRound);
+  archive("gridarchive", gridRound);
+  updateCounts();
 }
-function versionLink(it, v, i, detail = false) {
+function versionLink(it, v, i, detail = false, round = detailRound) {
   const a = document.createElement("a");
-  a.href = `#/${it.key}/${i + 1}`;
+  a.href = detailHash(it.key, i + 1, round);
   a.setAttribute("aria-label", `${it.name} · ${v.name}, verze ${i + 1} ze ${it.versions.length}`);
   a.title = v.name;
   const img = document.createElement("img");
@@ -302,23 +455,56 @@ function updateCounts() {
     COMMENTS.length ? `Komentářů celkem: ${COMMENTS.length}` : "";
 }
 
-function route() {
+async function route() {
   if (!DATA) return;
-  const [key, vpart] = decodeURIComponent(location.hash.replace(/^#\/?/, "")).split("/");
-  const idx = DATA.items.findIndex(it => it.key === key);
-  const it = key === GENERAL.key ? GENERAL : DATA.items[idx];
-  if (!it) {
-    current = currentVer = null;
-    $("detail").hidden = true; $("gridview").hidden = false;
-    document.title = DATA.title;
+  saveDraft();
+  const serial = ++routeSerial;
+  ++compareSerial; ++switchSerial;
+  $("routeerror").hidden = true;
+  let path;
+  try { path = decodeURIComponent(location.hash.replace(/^#\/?/, "")); }
+  catch { path = ""; }
+  const [designPath, requestedRound] = path.split("@");
+  const [key, vpart] = designPath.split("/");
+  let round = DATA.rounds.some(r => r.id === requestedRound) ? requestedRound : DATA.current;
+  let items, it, note = "";
+  $("roundstatus").textContent = `Načítám kolo ${roundIndex(round) + 1}…`;
+  try {
+    items = await roundItems(round);
+    it = key === GENERAL.key ? GENERAL : items.find(it => it.key === key);
+    if (key && !it) {
+      const at = roundIndex(round);
+      const nearest = DATA.rounds.filter(r => existsAt(key, r.id)).sort((a, b) =>
+        Math.abs(roundIndex(a.id) - at) - Math.abs(roundIndex(b.id) - at))[0];
+      if (nearest) {
+        note = `Návrh v kole ${at + 1} neexistoval. Zobrazuji nejbližší kolo ${roundIndex(nearest.id) + 1}.`;
+        round = nearest.id; items = await roundItems(round); it = items.find(it => it.key === key);
+      } else note = "Návrh nebyl nalezen. Zobrazuji přehled návrhů.";
+    }
+  } catch {
+    if (serial !== routeSerial) return;
+    $("routeerrortext").textContent = "Kolo se nepodařilo načíst. Zkuste to prosím znovu.";
+    $("routeerror").hidden = false;
+    $("roundstatus").textContent = "Kolo se nepodařilo načíst.";
     return;
   }
-  const same = current === it;
-  if (!same) saveDraft();
+  if (serial !== routeSerial) return;
+  $("roundstatus").textContent = `Zobrazeno kolo ${roundLabel(round)}. ${note}`;
+  if (!it) {
+    current = currentVer = null;
+    gridRound = round; gridItems = items; buildGrid();
+    $("detail").hidden = true; $("gridview").hidden = false;
+    document.title = DATA.title;
+    if (note) { $("routeerrortext").textContent = note; $("routeerror").hidden = false; }
+    return;
+  }
+  const same = current?.key === it.key;
   const vi = it.versions ? Math.min(Math.max((parseInt(vpart, 10) || 1) - 1, 0), it.versions.length - 1) : 0;
   const ver = it.versions ? it.versions[vi] : null;
-  current = it; currentVer = ver;
+  current = it; currentVer = ver; detailRound = round;
+  if (!same) $("comparetoggle").checked = false;
   $("gridview").hidden = true; $("detail").hidden = false;
+  $("back").href = gridHash(gridRound);
   document.title = it.name + " – " + DATA.title;
   $("dtitle").textContent = it.name;
   $("didea").textContent = it.idea;
@@ -334,19 +520,16 @@ function route() {
     strip.append(a);
   });
   if (refocus) strip.querySelector('[aria-current="true"]')?.focus({ preventScroll: true });
-  const n = DATA.items.length;
+  $("roundnote").textContent = note; $("roundnote").hidden = !note;
+  archive("detailarchive", round, it.key);
+  buildTimeline();
+  const idx = items.findIndex(x => x.key === it.key), n = items.length;
   $("prev").hidden = $("next").hidden = !ver;
   if (ver) {
-    $("prev").href = "#/" + DATA.items[(idx - 1 + n) % n].key;
-    $("next").href = "#/" + DATA.items[(idx + 1) % n].key;
+    $("prev").href = detailHash(items[(idx - 1 + n) % n].key, 1, round);
+    $("next").href = detailHash(items[(idx + 1) % n].key, 1, round);
     for (const [id, path, label] of [["front", ver.front, "přední"], ["backside", ver.back, "zadní"]]) {
-      const btn = $(id);
-      btn.innerHTML = "";
-      const img = document.createElement("img");
-      img.alt = `${it.name}, ${label} strana`;
-      btn.append(img);
-      btn.dataset.src = path;
-      img.src = path;
+      sideImage(id, path, `${it.name}, ${label} strana`);
     }
   }
   if (!same) {
@@ -356,8 +539,121 @@ function route() {
     window.scrollTo(0, 0);
   }
   renderComments();
+  renderComparison();
 }
 window.addEventListener("hashchange", route);
+$("roundretry").addEventListener("click", route);
+$("roundselect").addEventListener("change", () => { location.hash = gridHash($("roundselect").value); });
+$("changesonly").addEventListener("change", buildGrid);
+function stepRound(step) {
+  // the grid steps from the round in the URL, which may still be loading after a quick previous press
+  const asked = location.hash.split("@")[1], base = current ? detailRound :
+    DATA.rounds.some(r => r.id === asked) ? asked : location.hash.includes("@") ? gridRound : DATA.current;
+  const r = DATA.rounds[roundIndex(base) + step];
+  if (!r) return;
+  if (current) switchDetailRound(r.id);
+  else location.hash = gridHash(r.id);
+}
+$("roundprev").addEventListener("click", () => stepRound(-1));
+$("roundnext").addEventListener("click", () => stepRound(1));
+
+async function switchDetailRound(id) {
+  const it = current, ver = currentVer, serial = ++switchSerial;
+  $("roundstatus").textContent = `Načítám kolo ${roundIndex(id) + 1}…`;
+  try {
+    const items = await roundItems(id);
+    if (serial !== switchSerial) return;
+    const target = items.find(x => x.key === it.key);
+    const vi = target?.versions.findIndex(v => v.name === ver?.name) ?? -1;
+    const to = detailHash(it.key, Math.max(0, vi) + 1, id);
+    if (location.hash === to) await route();
+    else location.hash = to;
+  } catch {
+    if (serial !== switchSerial) return;
+    $("roundstatus").textContent = "Kolo se nepodařilo načíst.";
+    $("roundnote").textContent = "Kolo se nepodařilo načíst. Zkuste je vybrat znovu.";
+    $("roundnote").hidden = false;
+  }
+}
+function changeRounds() {
+  return DATA.rounds.filter(r => ["new", "changed"].includes(change(r.id, current.key)));
+}
+function previousChangeRound() {
+  const rounds = changeRounds().filter(r => roundIndex(r.id) <= roundIndex(detailRound));
+  return rounds[rounds.length - 2];
+}
+function buildTimeline() {
+  $("roundpanel").hidden = !currentVer;
+  $("detailround").textContent = `Kolo ${roundLabel(detailRound)}${detailRound === DATA.current ? " (aktuální)" : ""}`;
+  const timeline = $("timeline"), refocus = timeline.contains(document.activeElement);
+  timeline.replaceChildren();
+  const active = changeRounds().filter(r => roundIndex(r.id) <= roundIndex(detailRound)).at(-1);
+  for (const r of DATA.rounds.filter(r => change(r.id, current.key))) {
+    const removed = change(r.id, current.key) === "removed";
+    const chip = document.createElement(removed ? "span" : "a");
+    chip.textContent = `${roundLabel(r.id)}${removed ? " · odstraněno" : ""}`;
+    if (removed) chip.className = "removed";
+    else {
+      chip.href = detailHash(current.key, 1, r.id);
+      chip.dataset.round = r.id;
+      chip.setAttribute("aria-current", String(r.id === active?.id));
+      chip.addEventListener("click", e => { e.preventDefault(); switchDetailRound(r.id); });
+    }
+    timeline.append(chip);
+  }
+  if (refocus) timeline.querySelector('[aria-current="true"]')?.focus({ preventScroll: true });
+  $("comparetoggle").disabled = !previousChangeRound();
+  if ($("comparetoggle").disabled) $("comparetoggle").checked = false;
+}
+function sideImage(id, path, label) {
+  const btn = $(id), img = document.createElement("img");
+  img.alt = label; img.src = path; img.decoding = "async";
+  btn.replaceChildren(img); btn.dataset.src = path;
+  if (id.startsWith("compare")) btn.setAttribute("aria-label", label + ", zvětšit");
+}
+async function renderComparison() {
+  const serial = ++compareSerial, previous = currentVer && previousChangeRound();
+  $("comparison").hidden = true; $("sides").hidden = !currentVer;
+  $("comparestatus").textContent = currentVer && !previous ? "Toto je první kolo tohoto návrhu." : "";
+  if (!$("comparetoggle").checked || !previous) return;
+  const it = current, ver = currentVer, round = detailRound;
+  $("comparestatus").textContent = "Načítám porovnání…";
+  try {
+    const items = await roundItems(previous.id);
+    if (serial !== compareSerial) return;
+    const old = items.find(x => x.key === it.key);
+    const before = old.versions.find(v => v.name === ver.name) || old.versions[0];
+    sideImage("comparebefore", before.front, `${it.name}, kolo ${roundIndex(previous.id) + 1}, ${before.name}`);
+    sideImage("comparenow", ver.front, `${it.name}, kolo ${roundIndex(round) + 1}, ${ver.name}`);
+    $("compareprevlabel").textContent = `Dříve: kolo ${roundLabel(previous.id)} · ${before.name}`;
+    $("comparenowlabel").textContent = `Zobrazeno: kolo ${roundLabel(round)} · ${ver.name}`;
+    $("comparestatus").textContent = "";
+    $("comparison").hidden = false; $("sides").hidden = true;
+  } catch {
+    if (serial !== compareSerial) return;
+    $("comparestatus").textContent = "Porovnání se nepodařilo načíst. Zkuste je zapnout znovu.";
+  }
+}
+$("comparetoggle").addEventListener("change", renderComparison);
+for (const id of ["changesonly", "comparetoggle"]) $(id).addEventListener("keydown", e => {
+  if (e.key !== "Enter") return;
+  e.preventDefault(); $(id).checked = !$(id).checked; $(id).dispatchEvent(new Event("change"));
+});
+$("compareslider").addEventListener("input", () => {
+  $("compareimages").style.setProperty("--split", $("compareslider").value + "%");
+});
+function dragCompare(e) {
+  const rect = $("compareimages").getBoundingClientRect();
+  $("compareslider").value = Math.max(0, Math.min(100, (e.clientX - rect.left) / rect.width * 100));
+  $("compareslider").dispatchEvent(new Event("input"));
+}
+$("compareimages").addEventListener("pointerdown", e => {
+  if (!matchMedia("(max-width: 600px)").matches || e.button !== 0) return;
+  $("compareimages").setPointerCapture(e.pointerId); dragCompare(e);
+});
+$("compareimages").addEventListener("pointermove", e => {
+  if ($("compareimages").hasPointerCapture(e.pointerId)) dragCompare(e);
+});
 $("vstrip").addEventListener("keydown", e => {
   if (!["ArrowLeft", "ArrowRight"].includes(e.key)) return;
   const links = [...$("vstrip").querySelectorAll("a")], i = links.indexOf(document.activeElement);
@@ -369,19 +665,51 @@ $("vstrip").addEventListener("keydown", e => {
 function fmt(ts) {
   return new Date(ts * 1000).toLocaleString("cs-CZ", { day: "numeric", month: "numeric", hour: "2-digit", minute: "2-digit" });
 }
+function commentRound(ts) {
+  // Round dates are Czech wall times, independent of the reviewer's time zone.
+  const parts = Object.fromEntries(new Intl.DateTimeFormat("cs-CZ", { timeZone: "Europe/Prague",
+    year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hourCycle: "h23" })
+    .formatToParts(new Date(ts * 1000)).map(p => [p.type, p.value]));
+  const local = `${parts.year}-${parts.month}-${parts.day}T${parts.hour}:${parts.minute}`;
+  return DATA.rounds.filter(r => r.date <= local).at(-1) || DATA.rounds[0];
+}
+function commentTarget(c, it, items) {
+  const target = items.find(x => x.key === it.key && x.versions.some(v => v.file === c.version)) ||
+    items.find(x => (x.thread || x.key) === c.design && x.versions.some(v => v.file === c.version)) ||
+    items.find(x => x.key === it.key);
+  const vi = target?.versions.findIndex(v => v.file === c.version) ?? -1;
+  return detailHash(target?.key || it.key, Math.max(0, vi) + 1, commentRound(c.ts).id);
+}
 function renderComments() {
+  if (!current) return;
   const list = $("clist"); list.innerHTML = "";
   if (commentsError) { list.innerHTML = '<p class="err">Komentáře se teď nepodařilo načíst. Zkuste to prosím později.</p>'; }
   const cs = forKey(current.thread || current.key);
   if (!cs.length && !commentsError) list.innerHTML = '<p class="none">Zatím žádné komentáře.</p>';
   for (const c of cs) {
     const d = document.createElement("div"); d.className = "c";
+    const round = commentRound(c.ts);
+    if (detailRound !== DATA.current && round.id === detailRound) d.classList.add("in-round");
     d.innerHTML = '<div class="meta"><b></b><span></span></div><div class="t"></div>';
     d.querySelector("b").textContent = c.name;
     d.querySelector(".meta span").textContent = fmt(c.ts);
-    if (currentVer && c.version && (current.versions.length > 1 || c.version !== currentVer.file)) {
+    const tag = document.createElement("span"); tag.className = "round-tag";
+    tag.textContent = `kolo ${roundIndex(round.id) + 1}`; d.querySelector(".meta").append(tag);
+    if (currentVer && c.version && (current.versions.length > 1 || c.version !== currentVer.file || round.id !== detailRound)) {
       const vn = (current.vnames || {})[c.version] || (current.versions.find(v => v.file === c.version) || {}).name;
-      const o = document.createElement("span"); o.className = "old";
+      const o = document.createElement("a"); o.className = "old";
+      const it = current;
+      o.href = commentTarget(c, it, roundCache.get(round.id) || []);
+      o.addEventListener("click", async e => {
+        e.preventDefault();
+        const serial = routeSerial;
+        try {
+          const items = await roundItems(round.id);
+          if (serial === routeSerial) location.hash = commentTarget(c, it, items);
+        } catch {
+          $("cerr").textContent = "Kolo komentáře se nepodařilo načíst. Zkuste odkaz znovu.";
+        }
+      });
       o.textContent = vn ? "k verzi " + vn : "k dřívější verzi"; d.querySelector(".meta").append(o);
     }
     if (c.mine) {
@@ -425,7 +753,7 @@ $("cform").addEventListener("submit", async e => {
   } finally { $("csend").disabled = false; }
 });
 
-for (const id of ["front", "backside"]) $(id).addEventListener("click", () => {
+for (const id of ["front", "backside", "comparebefore", "comparenow"]) $(id).addEventListener("click", () => {
   const z = $("zoom");
   z.querySelector("img").src = $(id).dataset.src;
   z.classList.add("fit"); z.hidden = false;
@@ -436,12 +764,16 @@ $("zoom").addEventListener("click", e => {
   z.hidden = true;
 });
 document.addEventListener("keydown", e => {
-  if (e.target.matches("input, textarea")) return;
+  if (e.target.closest("textarea, select, [contenteditable]") ||
+      e.target.matches('input:not([type="checkbox"]):not([type="range"])')) return;
   if (!$("zoom").hidden) { if (e.key === "Escape") $("zoom").hidden = true; return; }
-  if (!current) return;
+  // before the modifier check: Czech keyboards type [ and ] with AltGr, which browsers report as Ctrl+Alt
+  if (DATA && ["[", "]"].includes(e.key) && !e.metaKey) { e.preventDefault(); stepRound(e.key === "[" ? -1 : 1); return; }
   if (e.altKey || e.ctrlKey || e.metaKey || e.shiftKey) return;  // leave browser shortcuts (Alt+← = back) alone
+  if (e.target.matches("input")) return;
+  if (!current) return;
   let to = null;
-  if (e.key === "Escape") to = "#/";
+  if (e.key === "Escape") to = gridHash(gridRound);
   else if (currentVer && e.key === "ArrowLeft") to = $("prev").getAttribute("href");
   else if (currentVer && e.key === "ArrowRight") to = $("next").getAttribute("href");
   if (to === null) return;
