@@ -1,5 +1,60 @@
 [
  {
+  "id": "g0",
+  "date": "2026-10-10T16:35",
+  "label": "Původní leták PauseAI CZ"
+ },
+ {
+  "id": "g1",
+  "date": "2026-10-10T17:07",
+  "label": "Kolo 1: první návrhy A–G"
+ },
+ {
+  "id": "g2",
+  "date": "2026-10-10T20:45",
+  "label": "Kolo 2: vylepšené A–G, nové H–N"
+ },
+ {
+  "id": "g3",
+  "date": "2026-10-10T21:56",
+  "label": "Bez obrázků z AI: volná díla, nový Golem"
+ },
+ {
+  "id": "g4",
+  "date": "2026-10-14T09:41",
+  "label": "Série 3: O–X a Metropolis"
+ },
+ {
+  "id": "g5",
+  "date": "2026-10-18T19:12",
+  "label": "Kolo 4: druhé verze všech 27 návrhů"
+ },
+ {
+  "id": "g6",
+  "date": "2026-10-19T04:49",
+  "label": "Série 4: 39 nových návrhů Y1–Y39"
+ },
+ {
+  "id": "g7",
+  "date": "2026-10-19T12:22",
+  "label": "Skutečné fotografie u části návrhů"
+ },
+ {
+  "id": "g8",
+  "date": "2026-10-19T13:35",
+  "label": "Kolo 7: jedno hlavní sdělení"
+ },
+ {
+  "id": "g9",
+  "date": "2026-10-20T11:59",
+  "label": "Verze pro EA Česko"
+ },
+ {
+  "id": "g10",
+  "date": "2026-10-20T16:13",
+  "label": "EA kola 2–3: logo, nové fotky, Challenger"
+ },
+ {
   "id": "r1",
   "date": "2026-10-20T23:12",
   "label": "Oblíbené a verze"

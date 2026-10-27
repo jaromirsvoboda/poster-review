@@ -149,7 +149,7 @@ form.add .row input { flex: 1; min-width: 160px; }
   header.top h1 { font-size: 1.25rem; }
 }
 @media (max-width: 600px) {
-  .compare-images { display: block; position: relative; touch-action: pan-y; --split: 50%; }
+  .compare-images { display: block; position: relative; touch-action: pan-y; user-select: none; --split: 50%; }
   .compare-images .compare-before { position: absolute; inset: 0; z-index: 1;
     clip-path: inset(0 calc(100% - var(--split)) 0 0); }
   .compare-images::after { content: ""; position: absolute; top: 0; bottom: 0; left: var(--split); width: 2px;
@@ -194,7 +194,7 @@ form.add .row input { flex: 1; min-width: 160px; }
       <span id="total" class="hint"></span>
       <span class="sp"></span>
     </div>
-    <h2 class="sect">Oblíbené<span id="nfav"></span></h2>
+    <h2 class="sect" id="favhead">Oblíbené<span id="nfav"></span></h2>
     <div class="grid" id="gridfav"></div>
     <h2 class="sect" id="newhead" hidden>Nové návrhy<span id="nnew"></span></h2>
     <div class="grid" id="gridnew" hidden></div>
@@ -414,6 +414,7 @@ function buildGrid() {
   $("nfav").textContent = `(${nfav})`;
   $("nnew").textContent = `(${nnew})`;
   $("newhead").hidden = $("gridnew").hidden = !nnew;
+  $("favhead").hidden = $("gridfav").hidden = !nfav;  // no favourites before the gallery's first round
   $("noth").textContent = `(${items.length - nfav - nnew})`;
   const designs = new Set(items.map(it => it.thread || it.key)).size;
   const versions = items.reduce((n, it) => n + it.versions.length, 0);
