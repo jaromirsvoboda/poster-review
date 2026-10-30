@@ -73,9 +73,36 @@ h2.sect span { color: var(--muted); font-weight: 400; font-size: .9rem; margin-l
 .round-controls { position: sticky; top: 0; z-index: 2; background: var(--surface); border: 1px solid var(--line);
   border-radius: 8px; padding: 10px; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
 .round-picker { display: flex; align-items: center; gap: 6px; width: 100%; min-width: 0; }
-.round-picker select { flex: 1; min-width: 0; width: 0; padding: 8px 4px; background: var(--bg);
-  border: 1px solid var(--line); border-radius: 4px; }
+.round-picker .rt { flex: 1; }
 .round-picker .btn { padding: 8px 10px; }
+.round-caption { margin: 0; font-size: .9rem; min-width: 0; flex: 1 1 260px; overflow: hidden; text-overflow: ellipsis;
+  white-space: nowrap; }
+.round-caption .rt-name { color: var(--muted); font-size: .82rem; }
+/* round timeline: one dot per round on a line, grouped by day; round names only in the tooltip and the caption */
+.rt { display: flex; gap: 10px; min-width: 0; overflow-x: auto; scrollbar-width: thin; padding: 4px 2px 0; }
+.rt-day:first-child .rt-stops::before { left: 0; }
+.rt-day:last-child .rt-stops::before { right: 0; }
+.rt-day { flex: 1 1 auto; min-width: max-content; display: flex; flex-direction: column; }
+.rt-stops { display: flex; position: relative; }
+.rt-stops::before { content: ""; position: absolute; left: -5px; right: -5px; top: 50%; height: 2px; margin-top: -1px;
+  background: var(--line); border-radius: 1px; }
+.rt-stop { flex: 1 0 22px; height: 28px; display: grid; place-items: center; position: relative; text-decoration: none;
+  border-radius: 50%; }
+.rt-stop::after { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--line); }
+a.rt-stop::after { width: 12px; height: 12px; background: var(--surface); border: 2px solid var(--muted);
+  transition: transform .12s; }
+a.rt-stop.changed::after { border-color: var(--accent); }
+a.rt-stop:hover::after { transform: scale(1.3); border-color: var(--focus); }
+a.rt-stop[aria-current="true"]::after { width: 16px; height: 16px; background: var(--accent); border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--surface), 0 0 0 5px var(--accent); }
+.rt-stop.viewing::after { box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--muted); }
+.rt-stop.removed::after { content: "×"; width: auto; height: auto; background: none; color: var(--danger);
+  font-weight: 700; line-height: 1; }
+a.rt-stop:focus-visible { outline-offset: 0; }
+.rt-date { font-size: .7rem; color: var(--muted); padding: 1px 2px 0; white-space: nowrap; border-left: 1px solid var(--line); }
+#rtip { position: fixed; z-index: 5; max-width: min(340px, calc(100vw - 16px)); padding: 6px 9px; border-radius: 6px;
+  background: var(--ink); color: var(--bg); font-size: .8rem; line-height: 1.35; pointer-events: none; box-shadow: var(--shadow); }
+#rtip b { display: block; }
 .round-picker .btn:disabled { cursor: default; }
 .round-controls label, .compare-control { font-size: .9rem; }
 .archive { background: var(--surface); border-left: 4px solid var(--accent); padding: 10px 12px; margin: 12px 0; }
@@ -111,11 +138,7 @@ h2.sect span { color: var(--muted); font-weight: 400; font-size: .9rem; margin-l
 .file { font-size: .8rem; color: var(--muted); margin-top: 8px; overflow-wrap: anywhere; }
 .round-panel { margin-bottom: 16px; }
 .round-panel p { margin: 0 0 8px; }
-.timeline { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
-.timeline a, .timeline .removed { max-width: 100%; padding: 6px 9px; border: 1px solid var(--line);
-  border-radius: 6px; background: var(--surface); font-size: .8rem; text-decoration: none; overflow-wrap: anywhere; }
-.timeline a[aria-current="true"] { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); font-weight: 700; }
-.timeline .removed { color: var(--danger); }
+.round-panel .rt { margin-bottom: 10px; }
 .compare-control { display: flex; gap: 6px; align-items: center; }
 .compare-labels { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; font-size: .85rem; margin-bottom: 8px; }
 .compare-images { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
@@ -176,11 +199,11 @@ form.add .row input { flex: 1; min-width: 160px; }
     </header>
     <div class="round-controls" id="roundcontrols" hidden>
       <div class="round-picker">
-        <label for="roundselect">Kolo:</label>
         <button class="btn ghost" id="roundprev" type="button" aria-label="Předchozí kolo">◀</button>
-        <select id="roundselect" aria-label="Kolo recenze"></select>
+        <nav class="rt" id="roundtimeline" aria-label="Kola recenze"></nav>
         <button class="btn ghost" id="roundnext" type="button" aria-label="Další kolo">▶</button>
       </div>
+      <p class="round-caption" id="roundcaption"></p>
       <label><input id="changesonly" type="checkbox"> jen změny tohoto kola</label>
       <span class="hint">Klávesy [ a ] mění kolo.</span>
     </div>
@@ -218,8 +241,8 @@ form.add .row input { flex: 1; min-width: 160px; }
     <div class="archive" id="detailarchive" hidden></div>
     <p class="hint" id="roundnote" hidden></p>
     <div class="round-panel" id="roundpanel" hidden>
-      <p id="detailround"></p>
-      <nav class="timeline" id="timeline" aria-label="Kola změn tohoto návrhu"></nav>
+      <p class="round-caption" id="detailround"></p>
+      <nav class="rt" id="timeline" aria-label="Kola změn tohoto návrhu"></nav>
       <label class="compare-control"><input id="comparetoggle" type="checkbox"> Porovnat s předchozím kolem</label>
       <p class="hint" id="comparestatus" role="status"></p>
     </div>
@@ -257,6 +280,7 @@ form.add .row input { flex: 1; min-width: 160px; }
   </div>
 </main>
 
+<div id="rtip" role="tooltip" hidden></div>
 <div id="zoom" class="fit" hidden title="Klikněte pro zavření, druhým klikem zvětšíte"><img alt=""></div>
 
 <script>
@@ -280,6 +304,74 @@ const roundLabel = id => {
   const r = DATA.rounds[roundIndex(id)];
   return `${roundIndex(id) + 1} · ${roundDate(r)} – ${r.label}`;
 };
+const roundShort = id => `${roundIndex(id) + 1} · ${roundDate(DATA.rounds[roundIndex(id)])}`;
+function roundCaption(el, id) {
+  const r = DATA.rounds[roundIndex(id)], strong = document.createElement("strong"), name = document.createElement("span");
+  strong.textContent = `Kolo ${roundIndex(id) + 1} z ${DATA.rounds.length}`;
+  name.className = "rt-name"; name.textContent = r.label;
+  el.replaceChildren(strong, ` · ${roundDate(r)}${id === DATA.current ? " (aktuální)" : ""} · `, name);
+  el.title = r.label;
+}
+// One stop per round, grouped by day. stopFor(r) gives {kind, href, tip, onClick} for a link, or {kind, tip} for a mark.
+function roundTimeline(nav, selected, stopFor) {
+  const refocus = nav.contains(document.activeElement);
+  nav.replaceChildren();
+  let stops = null, day = null;
+  for (const r of DATA.rounds) {
+    if (roundDate(r) !== day) {
+      day = roundDate(r);
+      const group = document.createElement("div"), date = document.createElement("span");
+      group.className = "rt-day"; stops = document.createElement("div"); stops.className = "rt-stops";
+      date.className = "rt-date"; date.textContent = day; date.setAttribute("aria-hidden", "true");
+      group.append(stops, date); nav.append(group);
+    }
+    const s = stopFor(r), el = document.createElement(s.href ? "a" : "span");
+    el.className = `rt-stop ${s.kind || ""}`; el.dataset.round = r.id;
+    const time = new Date(r.date).toLocaleTimeString("cs-CZ", { hour: "numeric", minute: "2-digit" });
+    el.dataset.tip = `Kolo ${roundIndex(r.id) + 1} · ${day} ${time}${s.tip ? " · " + s.tip : ""}\n${r.label}`;
+    if (s.href) {
+      el.href = s.href; el.tabIndex = -1;
+      el.setAttribute("aria-label", `Kolo ${roundLabel(r.id)}${s.tip ? ", " + s.tip : ""}`);
+      el.setAttribute("aria-current", String(r.id === selected));
+      if (s.onClick) el.addEventListener("click", e => { e.preventDefault(); s.onClick(); });
+    } else el.setAttribute("aria-hidden", "true");
+    stops.append(el);
+    stops.parentElement.style.flexGrow = stops.childElementCount;
+  }
+  const links = [...nav.querySelectorAll("a")];
+  const target = links.find(a => a.dataset.round === selected) || links.at(-1);
+  if (!target) return;
+  target.tabIndex = 0;  // one tab stop for the whole timeline; arrows move within it
+  requestAnimationFrame(() => {  // keep the selected round in view when the timeline scrolls (phones)
+    const t = target.getBoundingClientRect(), n = nav.getBoundingClientRect();
+    if (t.left < n.left || t.right > n.right) nav.scrollLeft += t.left - n.left - n.width / 2;
+  });
+  if (refocus) target.focus({ preventScroll: true });
+}
+function showTip(stop) {
+  const tip = $("rtip"), [head, name] = stop.dataset.tip.split("\n"), b = document.createElement("b");
+  b.textContent = head; tip.replaceChildren(b, name); tip.hidden = false;
+  const r = stop.getBoundingClientRect(), w = tip.offsetWidth, h = tip.offsetHeight;
+  tip.style.left = Math.max(8, Math.min(innerWidth - w - 8, r.left + r.width / 2 - w / 2)) + "px";
+  tip.style.top = (r.top - h - 6 >= 8 ? r.top - h - 6 : r.bottom + 6) + "px";
+}
+document.addEventListener("pointerover", e => {
+  const stop = e.target.closest?.(".rt-stop");
+  if (stop && e.pointerType !== "touch") showTip(stop);
+});
+document.addEventListener("pointerout", e => { if (e.target.closest?.(".rt-stop")) $("rtip").hidden = true; });
+document.addEventListener("focusin", e => { if (e.target.matches(".rt-stop")) showTip(e.target); });
+document.addEventListener("focusout", e => { if (e.target.matches(".rt-stop")) $("rtip").hidden = true; });
+addEventListener("scroll", () => { $("rtip").hidden = true; }, { passive: true, capture: true });
+for (const id of ["roundtimeline", "timeline"]) $(id).addEventListener("keydown", e => {
+  if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(e.key) || e.altKey || e.ctrlKey || e.metaKey) return;
+  const links = [...$(id).querySelectorAll("a")], i = links.indexOf(document.activeElement);
+  if (i < 0) return;
+  e.preventDefault(); e.stopPropagation();
+  const to = e.key === "Home" ? 0 : e.key === "End" ? links.length - 1 :
+    Math.max(0, Math.min(links.length - 1, i + (e.key === "ArrowRight" ? 1 : -1)));
+  links[i].tabIndex = -1; links[to].tabIndex = 0; links[to].focus();
+});
 const roundSuffix = id => id === DATA.current ? "" : "@" + id;
 const gridHash = id => id === DATA.current ? "#/" : "#@" + id;
 const detailHash = (key, n, id) => `#/${encodeURIComponent(key)}/${n}${roundSuffix(id)}`;
@@ -311,7 +403,7 @@ function existsAt(key, id) {
 function archive(id, round, key = null) {
   const box = $(id); box.replaceChildren(); box.hidden = round === DATA.current;
   if (box.hidden) return;
-  box.append(`Archiv · kolo ${roundLabel(round)}. `);
+  box.append(`Archiv · kolo ${roundShort(round)} `);
   const a = document.createElement("a"); a.textContent = "← zpět na aktuální";
   const hasCurrent = key && (key === GENERAL.key || DATA.items.some(it => it.key === key));
   a.href = hasCurrent ? detailHash(key, 1, DATA.current) : gridHash(DATA.current);
@@ -331,12 +423,6 @@ async function loadGallery() {
     roundCache.clear(); roundLoads.clear(); roundCache.set(DATA.current, DATA.items);
     document.title = DATA.title;
     $("title").textContent = DATA.title;
-    $("roundselect").replaceChildren();
-    for (const round of DATA.rounds) {
-      const option = document.createElement("option"); option.value = round.id;
-      option.textContent = `${roundLabel(round.id)}${round.id === DATA.current ? " (aktuální)" : ""} · změněno ${Object.keys(DATA.changes[round.id] || {}).length}`;
-      $("roundselect").append(option);
-    }
     $("roundcontrols").hidden = false;
     $("loadstatus").hidden = true;
     await route();
@@ -420,7 +506,11 @@ function buildGrid() {
   const versions = items.reduce((n, it) => n + it.versions.length, 0);
   $("designcount").textContent = `${designs} návrhů · ${versions} ${versionsWord(versions)}`;
   $("nochanges").hidden = !!items.length;
-  $("roundselect").value = gridRound;
+  roundTimeline($("roundtimeline"), gridRound, r => {
+    const n = Object.keys(DATA.changes[r.id] || {}).length;
+    return { href: gridHash(r.id), tip: `${r.id === DATA.current ? "aktuální · " : ""}změněno ${n}` };
+  });
+  roundCaption($("roundcaption"), gridRound);
   $("roundprev").disabled = roundIndex(gridRound) === 0;
   $("roundnext").disabled = gridRound === DATA.current;
   const future = new Set(DATA.rounds.slice(roundIndex(gridRound) + 1).flatMap(r =>
@@ -544,7 +634,6 @@ async function route() {
 }
 window.addEventListener("hashchange", route);
 $("roundretry").addEventListener("click", route);
-$("roundselect").addEventListener("change", () => { location.hash = gridHash($("roundselect").value); });
 $("changesonly").addEventListener("change", buildGrid);
 function stepRound(step) {
   // the grid steps from the round in the URL, which may still be loading after a quick previous press
@@ -585,24 +674,16 @@ function previousChangeRound() {
 }
 function buildTimeline() {
   $("roundpanel").hidden = !currentVer;
-  $("detailround").textContent = `Kolo ${roundLabel(detailRound)}${detailRound === DATA.current ? " (aktuální)" : ""}`;
-  const timeline = $("timeline"), refocus = timeline.contains(document.activeElement);
-  timeline.replaceChildren();
+  roundCaption($("detailround"), detailRound);
   const active = changeRounds().filter(r => roundIndex(r.id) <= roundIndex(detailRound)).at(-1);
-  for (const r of DATA.rounds.filter(r => change(r.id, current.key))) {
-    const removed = change(r.id, current.key) === "removed";
-    const chip = document.createElement(removed ? "span" : "a");
-    chip.textContent = `${roundLabel(r.id)}${removed ? " · odstraněno" : ""}`;
-    if (removed) chip.className = "removed";
-    else {
-      chip.href = detailHash(current.key, 1, r.id);
-      chip.dataset.round = r.id;
-      chip.setAttribute("aria-current", String(r.id === active?.id));
-      chip.addEventListener("click", e => { e.preventDefault(); switchDetailRound(r.id); });
-    }
-    timeline.append(chip);
-  }
-  if (refocus) timeline.querySelector('[aria-current="true"]')?.focus({ preventScroll: true });
+  const words = { new: "nový návrh", changed: "návrh upraven", removed: "návrh odstraněn" };
+  roundTimeline($("timeline"), active?.id, r => {
+    const c = change(r.id, current.key), viewing = r.id === detailRound && r.id !== active?.id ? " viewing" : "";
+    if (c !== "new" && c !== "changed")
+      return { kind: (c || "") + viewing, tip: words[c] || (existsAt(current.key, r.id) ? "beze změny" : "návrh v tomto kole nebyl") };
+    return { kind: "changed" + viewing, href: detailHash(current.key, 1, r.id), tip: words[c],
+      onClick: () => switchDetailRound(r.id) };
+  });
   $("comparetoggle").disabled = !previousChangeRound();
   if ($("comparetoggle").disabled) $("comparetoggle").checked = false;
 }
@@ -626,8 +707,8 @@ async function renderComparison() {
     const before = old.versions.find(v => v.name === ver.name) || old.versions[0];
     sideImage("comparebefore", before.front, `${it.name}, kolo ${roundIndex(previous.id) + 1}, ${before.name}`);
     sideImage("comparenow", ver.front, `${it.name}, kolo ${roundIndex(round) + 1}, ${ver.name}`);
-    $("compareprevlabel").textContent = `Dříve: kolo ${roundLabel(previous.id)} · ${before.name}`;
-    $("comparenowlabel").textContent = `Zobrazeno: kolo ${roundLabel(round)} · ${ver.name}`;
+    $("compareprevlabel").textContent = `Dříve: kolo ${roundShort(previous.id)} · ${before.name}`;
+    $("comparenowlabel").textContent = `Zobrazeno: kolo ${roundShort(round)} · ${ver.name}`;
     $("comparestatus").textContent = "";
     $("comparison").hidden = false; $("sides").hidden = true;
   } catch {
