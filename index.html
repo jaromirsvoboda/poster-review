@@ -38,6 +38,7 @@ input[type=text], textarea { width: 100%; padding: 10px 12px; border-radius: 6px
   font-weight: 600; cursor: pointer; }
 a.btn { text-decoration: none; display: inline-block; }
 .btn:disabled { opacity: .6; cursor: progress; }
+.btn[aria-disabled="true"] { opacity: .6; cursor: default; }
 .btn.ghost { background: transparent; color: var(--ink); border: 1px solid var(--line); font-weight: 500; }
 .err { color: var(--danger); font-size: .9rem; min-height: 1.4em; margin: 10px 0 0; }
 
@@ -113,6 +114,34 @@ a.rt-stop:focus-visible { outline-offset: 0; }
 .round-badges .later { color: var(--muted); background: transparent; padding-left: 0; }
 .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden;
   clip-path: inset(50%); white-space: nowrap; }
+
+/* ranking */
+.sort-controls { border: 0; padding: 0; margin: 16px 0; display: flex; flex-wrap: wrap; gap: 8px 16px; }
+.sort-controls legend { float: left; margin-right: 12px; }
+.sort-controls label { display: inline-flex; align-items: center; min-height: 44px; cursor: pointer; }
+.place-badge { position: absolute; left: 6px; top: 6px; padding: 2px 8px; border-radius: 4px;
+  background: var(--ink); color: var(--surface); font-weight: 700; }
+.rank-stats { font-size: .82rem; color: var(--muted); margin: 4px 0 0; }
+.vote-panel { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 12px; margin-bottom: 18px; }
+.vote-panel p { margin: 0 0 10px; overflow-wrap: anywhere; }
+.pick-marker { color: var(--focus); font-weight: 700; }
+#ballottray { position: fixed; bottom: 0; left: 0; right: 0; z-index: 4; background: var(--surface);
+  border-top: 2px solid var(--line); box-shadow: 0 -2px 8px rgba(0,0,0,.12);
+  padding-bottom: env(safe-area-inset-bottom); }
+#traytoggle { width: 100%; min-height: 52px; text-align: left; background: transparent; border: 0;
+  padding: 10px 16px; cursor: pointer; }
+#traybody { max-height: min(60vh, 550px); overflow-y: auto; padding: 0 16px 12px; }
+#traylist { list-style: none; margin: 0 0 12px; padding: 0; }
+.pick-row { display: grid; grid-template-columns: 42px minmax(0, 1fr); gap: 6px 12px;
+  border-bottom: 1px solid var(--line); padding: 10px 0; align-items: start; }
+.pick-row img { width: 42px; height: 60px; object-fit: cover; grid-row: span 2; }
+.pick-label { overflow-wrap: anywhere; }
+.pick-actions { display: flex; flex-wrap: wrap; gap: 6px; }
+.pick-actions button { min-width: 44px; min-height: 44px; padding: 6px 10px; font-size: .85rem; }
+.pick-row.missing .pick-label, .pick-row.missing img { opacity: .6; }
+#ballotname { max-width: 380px; }
+#traybody p { margin: 8px 0 0; }
+#traynotice { overflow-wrap: anywhere; }
 
 /* detail */
 .dtop { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 16px 0 8px; }
@@ -217,12 +246,24 @@ form.add .row input { flex: 1; min-width: 160px; }
       <span id="total" class="hint"></span>
       <span class="sp"></span>
     </div>
+    <fieldset id="sortcontrols" class="sort-controls" hidden>
+      <legend>Řazení:</legend>
+      <label><input type="radio" name="sort" value="hlasy" id="sortranking"> podle hlasování</label>
+      <label><input type="radio" name="sort" value="sekce" id="sortsections"> podle sekcí</label>
+    </fieldset>
+    <p id="votertotal" class="hint" hidden></p>
+    <section id="rankedsection" hidden>
+      <h2 class="sect" id="rankedhead"></h2><div class="grid" id="gridranked"></div>
+      <h2 class="sect" id="unvotedhead"></h2><div class="grid" id="gridunvoted"></div>
+    </section>
+    <div id="sectiongrids">
     <h2 class="sect" id="favhead">Oblíbené<span id="nfav"></span></h2>
     <div class="grid" id="gridfav"></div>
     <h2 class="sect" id="newhead" hidden>Nové návrhy<span id="nnew"></span></h2>
     <div class="grid" id="gridnew" hidden></div>
     <h2 class="sect">Ostatní<span id="noth"></span></h2>
     <div class="grid" id="gridoth"></div>
+    </div>
   </div>
 
   <div id="detail" class="wrap" hidden>
@@ -238,6 +279,11 @@ form.add .row input { flex: 1; min-width: 160px; }
       <p id="versionstatus" role="status" aria-live="polite" aria-atomic="true"></p>
       <nav class="version-strip" id="vstrip" aria-label="Verze návrhu"></nav>
     </div>
+    <section id="votepanel" class="vote-panel" aria-label="Hlasování" hidden>
+      <p id="versionranking"></p>
+      <button class="btn ghost" type="button" id="pickversion" aria-pressed="false"></button>
+      <p class="hint" id="picklimit" role="status"></p>
+    </section>
     <div class="archive" id="detailarchive" hidden></div>
     <p class="hint" id="roundnote" hidden></p>
     <div class="round-panel" id="roundpanel" hidden>
@@ -280,6 +326,21 @@ form.add .row input { flex: 1; min-width: 160px; }
   </div>
 </main>
 
+<aside id="ballottray" aria-label="Můj výběr" hidden>
+  <div class="wrap">
+    <button type="button" id="traytoggle" aria-expanded="false" aria-controls="traybody">
+      Můj výběr: <span id="traycount"></span> · <span id="traystatus" role="status" aria-live="polite"></span>
+    </button>
+    <div id="traybody" hidden>
+      <ol id="traylist"></ol>
+      <label class="field" for="ballotname">Vaše jméno</label>
+      <input type="text" id="ballotname" maxlength="80" autocomplete="name">
+      <p class="hint">Hlas patří tomuto prohlížeči. U vybraných verzí se zobrazí vaše jméno.</p>
+      <p class="hint">Hlasy jsou veřejné: u každé verze je vidět, kdo ji vybral.</p>
+      <p class="hint" id="traynotice" role="status" aria-live="polite"></p>
+    </div>
+  </div>
+</aside>
 <div id="rtip" role="tooltip" hidden></div>
 <div id="zoom" class="fit" hidden title="Klikněte pro zavření, druhým klikem zvětšíte"><img alt=""></div>
 
@@ -426,8 +487,8 @@ async function loadGallery() {
     $("roundcontrols").hidden = false;
     $("loadstatus").hidden = true;
     await route();
-    loadComments();
-    setInterval(() => { if (!document.hidden) loadComments(); }, 60000);
+    loadComments(); loadRanking();
+    setInterval(() => { if (!document.hidden) { loadComments(); loadRanking(); } }, 60000);
   } catch {
     $("loadstatus").textContent = "Návrhy se nepodařilo načíst. Zkuste to prosím znovu.";
     $("retry").hidden = false;
@@ -441,8 +502,10 @@ function author() {
   return a;
 }
 function api(path, opts = {}) {
-  return fetch(DATA.api + path, { ...opts, headers: { Authorization: "Bearer " + DATA.token, "X-Author": author(),
-    ...(opts.body ? { "Content-Type": "application/json" } : {}) } });
+  const headers = new Headers({ Authorization: "Bearer " + DATA.token, "X-Author": author(),
+    ...(opts.body ? { "Content-Type": "application/json" } : {}) });
+  new Headers(opts.headers).forEach((value, key) => headers.set(key, value));
+  return fetch(DATA.api + path, { ...opts, headers });
 }
 let commentsError = false;
 async function loadComments() {
@@ -456,6 +519,285 @@ async function loadComments() {
   if (current) renderComments();
 }
 const forKey = k => COMMENTS.filter(c => c.design === k);
+
+// A ballot keeps its base revision while dirty, including across reloads.
+let RANKING = null, ballotState = { rev: 0, name: LS.get("name") || "", picks: [], dirty: false };
+try {
+  const saved = JSON.parse(LS.get("ballot"));
+  if (saved && Number.isInteger(saved.rev) && Array.isArray(saved.picks) && typeof saved.name === "string")
+    ballotState = { rev: saved.rev, name: saved.name, picks: saved.picks, dirty: !!saved.dirty };
+} catch {}
+let ballotEpoch = 0, savingBallot = false, saveTimer = null, retryStep = 0, saveBlocked = false;
+let trayOpen = false, ballotStatus = ballotState.dirty ? "Čeká na uložení" : "Uloženo", ballotNotice = "";
+let rankingRequest = 0;
+const clone = value => JSON.parse(JSON.stringify(value));
+function persistBallot(acknowledged = null) {
+  // A clean tab's polling must not erase another tab's unsaved recovery copy.
+  try {
+    const cached = JSON.parse(LS.get("ballot"));
+    if (!ballotState.dirty && cached?.dirty && JSON.stringify(cached) !== JSON.stringify(acknowledged)) return;
+  } catch {}
+  LS.set("ballot", JSON.stringify(ballotState));
+}
+const ballotK = () => RANKING?.k || 5;
+const currentPage = () => (current ? detailRound : gridRound) === DATA.current;
+const plural = (n, one, few, many) => `${n} ${n === 1 ? one : n >= 2 && n <= 4 ? few : many}`;
+const voteStats = r => `${plural(r.votes, "hlas", "hlasy", "hlasů")} · ${plural(r.points, "bod", "body", "bodů")}`;
+function versionEntry(file) {
+  for (const it of DATA.items) {
+    const i = it.versions.findIndex(v => v.file === file);
+    if (i >= 0) return { it, v: it.versions[i], i };
+  }
+  return null;
+}
+// "Design · version" only when the thread has more than one version to tell apart.
+function versionTitle(it, v) {
+  const thread = it.thread || it.key;
+  const n = DATA.items.filter(x => (x.thread || x.key) === thread).reduce((n, x) => n + x.versions.length, 0);
+  return it.name + (n > 1 ? " · " + v.name : "");
+}
+function rankedVersions() {
+  if (!RANKING) return [];
+  const order = new Map(DATA.items.flatMap(it => it.versions.map(v => v.file)).map((f, i) => [f, i]));
+  const rows = RANKING.results.filter(r => r.votes && order.has(r.version)).map(r => ({ ...r }));
+  rows.sort((a, b) => b.votes - a.votes || b.points - a.points || b.firsts - a.firsts || order.get(a.version) - order.get(b.version));
+  for (let i = 0; i < rows.length;) {
+    let j = i + 1;
+    while (j < rows.length && ["votes", "points", "firsts"].every(k => rows[i][k] === rows[j][k])) j++;
+    const place = j === i + 1 ? `${i + 1}.` : `${i + 1}.–${j}.`;
+    for (let n = i; n < j; n++) rows[n].place = place;
+    i = j;
+  }
+  return rows;
+}
+function buildRankingGrid(items) {
+  const available = !!RANKING && gridRound === DATA.current;
+  $("sortcontrols").hidden = $("votertotal").hidden = !available;
+  const mode = LS.get("sort") || (RANKING?.voters ? "hlasy" : "sekce");
+  $("sortranking").checked = mode === "hlasy"; $("sortsections").checked = mode !== "hlasy";
+  const ranked = available && mode === "hlasy";
+  $("sectiongrids").hidden = ranked; $("rankedsection").hidden = !ranked;
+  $("gridranked").replaceChildren(); $("gridunvoted").replaceChildren();
+  if (!available) return;
+  const n = RANKING.voters;
+  $("votertotal").textContent = n === 1 ? "Hlasoval 1 člověk" : n >= 2 && n <= 4 ? `Hlasovali ${n} lidé` : `Hlasovalo ${n} lidí`;
+  if (!ranked) return;
+  const visible = new Set(items.map(it => it.key));
+  const rows = rankedVersions();
+  const votedThreads = new Set(rows.map(r => { const e = versionEntry(r.version); return e.it.thread || e.it.key; }));
+  let count = 0;
+  for (const r of rows) {
+    const { it, v, i } = versionEntry(r.version);
+    if (!visible.has(it.key)) continue;
+    const card = document.createElement("article"); card.className = "card ranked-card";
+    card.dataset.key = it.thread || it.key; card.dataset.design = it.key; card.dataset.version = v.file;
+    const a = document.createElement("a"); a.className = "cardlink"; a.href = detailHash(it.key, i + 1, DATA.current);
+    a.innerHTML = '<div class="thumb"><img alt=""><span class="badge" hidden></span><span class="place-badge"></span></div><div class="cap"></div><p class="rank-stats"></p>';
+    const img = a.querySelector("img"); img.src = v.thumb; img.alt = it.name; img.loading = "lazy";
+    a.querySelector(".place-badge").textContent = r.place;
+    a.querySelector(".cap").textContent = versionTitle(it, v);
+    a.querySelector(".rank-stats").textContent = voteStats(r);
+    card.append(a); $("gridranked").append(card); count++;
+  }
+  // Keep normal cards for unpicked threads, including links into split halves.
+  const unvoted = new Map();
+  const normalCards = [...$("sectiongrids").querySelectorAll(".card")];
+  for (const card of normalCards) {
+    if (votedThreads.has(card.dataset.key)) continue;
+    const first = unvoted.get(card.dataset.key);
+    if (!first) { unvoted.set(card.dataset.key, card); $("gridunvoted").append(card); continue; }
+    const it = items.find(it => it.key === card.dataset.design);
+    let panel = first.querySelector(".version-previews");
+    if (!panel) {
+      panel = document.createElement("nav"); panel.className = "version-previews variants";
+      panel.setAttribute("aria-label", `Verze návrhu ${it.name}`); first.append(panel);
+    }
+    it.versions.forEach((v, i) => panel.append(versionLink(it, v, i, false, DATA.current)));
+  }
+  $("rankedhead").textContent = `Pořadí podle hlasování (${count})`;
+  $("unvotedhead").textContent = `Dosud bez hlasů (${unvoted.size})`;
+}
+for (const id of ["sortranking", "sortsections"]) $(id).addEventListener("change", () => {
+  LS.set("sort", $(id).value); buildGrid();
+});
+async function loadRanking() {
+  const serial = ++rankingRequest, epoch = ballotEpoch;
+  try {
+    const response = await api("/api/ranking");
+    if (!response.ok) throw new Error(response.status);
+    const data = await response.json();
+    if (serial !== rankingRequest) return;
+    RANKING = data;
+    if (!ballotState.dirty && !savingBallot && epoch === ballotEpoch) {
+      const me = data.me || { rev: 0, name: LS.get("name") || "", picks: [] };
+      ballotState = { ...me, dirty: false }; persistBallot();
+      if (me.name) LS.set("name", me.name);
+    }
+    if (ballotState.dirty && !savingBallot && !saveTimer && !saveBlocked) scheduleBallotSave();
+  } catch {
+    if (serial !== rankingRequest) return;
+    RANKING = null; // Older backends and unavailable ranking leave the gallery as it was.
+  }
+  if (!current) buildGrid();
+  renderVoting();
+}
+function markVersion(link, file) {
+  link.querySelector(".pick-marker")?.remove();
+  if (!link.dataset.baseLabel) link.dataset.baseLabel = link.getAttribute("aria-label");
+  link.setAttribute("aria-label", link.dataset.baseLabel);
+  const place = ballotState.picks.findIndex(p => p.version === file) + 1;
+  if (place && RANKING && detailRound === DATA.current) {
+    const marker = document.createElement("span"); marker.className = "pick-marker"; marker.textContent = `★ ${place}.`;
+    link.append(marker);
+    link.setAttribute("aria-label", `${link.dataset.baseLabel}, ve vašem výběru na ${place}. místě`);
+  }
+}
+function renderVoting() {
+  if (!DATA) return;
+  const available = !!RANKING && currentPage();
+  $("votepanel").hidden = !available || !currentVer;
+  for (const a of $("vstrip").querySelectorAll("a")) markVersion(a, a.dataset.version);
+  if (available && currentVer) {
+    const r = rankedVersions().find(r => r.version === currentVer.file);
+    $("versionranking").textContent = r ? `${r.place} místo · ${voteStats(r)} · vybrali: ${r.voters.map(v => `${v.name} (${v.place}.)`).join(", ")}` : "Tuto verzi zatím nikdo nevybral.";
+    const i = ballotState.picks.findIndex(p => p.version === currentVer.file);
+    $("pickversion").textContent = i < 0 ? "Přidat tuto verzi do svého výběru" : `Ve vašem výběru na ${i + 1}. místě · Odebrat`;
+    $("pickversion").setAttribute("aria-pressed", String(i >= 0));
+    $("pickversion").disabled = saveBlocked;
+  }
+  renderTray();
+}
+function renderTray() {
+  const visible = !!RANKING && currentPage() && (ballotState.picks.length > 0 || ballotState.dirty || ballotNotice);
+  $("ballottray").hidden = !visible;
+  $("traytoggle").setAttribute("aria-expanded", String(trayOpen)); $("traybody").hidden = !trayOpen;
+  $("traycount").textContent = `${ballotState.picks.length} z ${ballotK()}`;
+  $("traystatus").textContent = ballotStatus; $("traynotice").textContent = ballotNotice;
+  if (document.activeElement !== $("ballotname")) $("ballotname").value = ballotState.name;
+  $("ballotname").disabled = saveBlocked;
+  const focused = document.activeElement?.closest(".pick-row"), action = document.activeElement?.dataset.action;
+  const focusedFile = focused?.dataset.version;
+  const list = $("traylist"); list.replaceChildren();
+  ballotState.picks.forEach((p, i) => {
+    const entry = versionEntry(p.version), label = entry ? versionTitle(entry.it, entry.v) : `${p.design} · ${p.version}`;
+    const row = document.createElement("li"); row.className = "pick-row" + (entry ? "" : " missing"); row.dataset.version = p.version;
+    const img = document.createElement("img"); img.src = entry ? entry.v.thumb : p.art; img.alt = "";
+    const name = document.createElement("span"); name.className = "pick-label";
+    name.textContent = `${i + 1}. ${label}${entry ? "" : " – už není v galerii"}`;
+    const actions = document.createElement("div"); actions.className = "pick-actions";
+    const button = (text, action, disabled, fn) => {
+      const b = document.createElement("button"); b.type = "button"; b.className = "btn ghost"; b.textContent = text;
+      b.dataset.action = action; b.setAttribute("aria-label", `${text}: ${label}`); b.disabled = saveBlocked;
+      b.setAttribute("aria-disabled", String(disabled || saveBlocked));
+      b.addEventListener("click", () => { if (!disabled && !saveBlocked) fn(); }); actions.append(b);
+    };
+    if (entry) {
+      button("Posunout výš", "up", i === 0, () => movePick(i, -1));
+      button("Posunout níž", "down", i === ballotState.picks.length - 1, () => movePick(i, 1));
+    }
+    button("Odebrat", "remove", false, () => removePick(p.version));
+    row.append(img, name, actions); list.append(row);
+  });
+  if (focusedFile) focusPick(focusedFile, action);
+  reserveTraySpace();
+}
+function reserveTraySpace() {
+  document.body.style.paddingBottom = $("ballottray").hidden ? "" : `${$("ballottray").getBoundingClientRect().height + 24}px`;
+}
+new ResizeObserver(reserveTraySpace).observe($("ballottray"));
+function focusPick(file, action) {
+  const row = [...$("traylist").children].find(row => row.dataset.version === file);
+  const button = row?.querySelector(`[data-action="${action}"]`);
+  if (button && !button.disabled) button.focus({ preventScroll: true });
+  else row?.querySelector('button:not(:disabled)')?.focus({ preventScroll: true });
+}
+function editBallot() {
+  ballotEpoch++; ballotState.dirty = true; retryStep = 0; ballotNotice = "";
+  ballotStatus = ballotState.name.trim() ? "Čeká na uložení" : "Doplňte jméno";
+  persistBallot(); renderVoting(); scheduleBallotSave();
+}
+function setBallotName(value) {
+  const name = value.trim(); LS.set("name", name); $("cname").value = value;
+  if (ballotState.name === name) return;
+  ballotState.name = name;
+  if (ballotState.picks.length || ballotState.dirty) editBallot();
+  else persistBallot();
+}
+$("ballotname").addEventListener("input", () => setBallotName($("ballotname").value));
+$("traytoggle").addEventListener("click", () => { trayOpen = !trayOpen; renderTray(); });
+$("pickversion").addEventListener("click", () => {
+  if (!RANKING || !currentVer || !currentPage() || saveBlocked) return;
+  if (ballotState.picks.some(p => p.version === currentVer.file)) { removePick(currentVer.file); return; }
+  if (ballotState.picks.length >= ballotK()) {
+    $("picklimit").textContent = "Máte vybráno 5 verzí. Nejdřív některou odeberte."; return;
+  }
+  $("picklimit").textContent = "";
+  ballotState.picks.push({ design: current.thread || current.key, version: currentVer.file,
+    art: currentVer.front, round: DATA.current, ts: Date.now() / 1000 });
+  if (!ballotState.name.trim()) trayOpen = true;
+  editBallot();
+  if (!ballotState.name.trim()) $("ballotname").focus();
+});
+function removePick(file) {
+  ballotState.picks = ballotState.picks.filter(p => p.version !== file); $("picklimit").textContent = "";
+  editBallot();
+  if (trayOpen && !$("traylist").contains(document.activeElement)) $("traytoggle").focus({ preventScroll: true });
+}
+function movePick(i, delta) {
+  const file = ballotState.picks[i].version;
+  [ballotState.picks[i], ballotState.picks[i + delta]] = [ballotState.picks[i + delta], ballotState.picks[i]];
+  editBallot(); focusPick(file, delta < 0 ? "up" : "down");
+}
+function scheduleBallotSave(delay = 800) {
+  clearTimeout(saveTimer); saveTimer = null;
+  if (!ballotState.dirty || !ballotState.name.trim() || saveBlocked || savingBallot) return;
+  saveTimer = setTimeout(saveBallot, delay);
+}
+async function saveBallot() {
+  saveTimer = null;
+  if (savingBallot || !ballotState.dirty || !ballotState.name.trim() || saveBlocked) return;
+  savingBallot = true;
+  const epoch = ballotEpoch, sent = clone(ballotState);
+  ballotStatus = "Ukládám…"; renderTray();
+  let retry = false, acknowledged = sent;
+  try {
+    const response = await api("/api/ballot", { method: "PUT", body: JSON.stringify({ rev: sent.rev, name: sent.name, picks: sent.picks }) });
+    if (response.status === 403) {
+      saveBlocked = true; ballotStatus = "Tento hlas byl zneplatněn.";
+    } else if (response.status === 409) {
+      const stored = await response.json();
+      acknowledged = clone(ballotState);
+      ballotState = { ...stored, dirty: false }; ballotEpoch++; trayOpen = true;
+      LS.set("name", stored.name); $("cname").value = $("ballotname").value = stored.name;
+      ballotNotice = "Výběr se mezitím změnil v jiném okně; zobrazuji uložený stav.";
+      ballotStatus = "Uloženo"; retryStep = 0;
+    } else if (response.ok) {
+      const stored = await response.json(); ballotState.rev = stored.rev;
+      if (epoch === ballotEpoch) {
+        ballotState = { ...stored, dirty: false }; ballotStatus = "Uloženo";
+      } else {
+        // A later local reorder keeps the server's original artwork fingerprints.
+        for (const p of ballotState.picks) {
+          const old = stored.picks.find(x => x.version === p.version);
+          if (old) for (const k of ["art", "round", "ts"]) p[k] = old[k];
+        }
+        ballotStatus = "Čeká na uložení";
+      }
+      retryStep = 0;
+    } else if (response.status === 429 || response.status >= 500) {
+      throw new Error("retry");
+    } else {
+      saveBlocked = true; ballotStatus = "Výběr se nepodařilo uložit.";
+    }
+  } catch {
+    ballotStatus = "Neuloženo, zkouším znovu"; retry = true;
+  } finally {
+    savingBallot = false; persistBallot(acknowledged); renderVoting();
+    if (retry) scheduleBallotSave([2000, 5000, 15000, 30000][Math.min(retryStep++, 3)]);
+    else if (ballotState.dirty && !saveBlocked) scheduleBallotSave();
+    if (!retry) loadRanking();
+  }
+}
 
 const versionsWord = n => n < 5 ? "verze" : "verzí";
 function buildGrid() {
@@ -521,18 +863,20 @@ function buildGrid() {
     n < 5 ? `${n} návrhy v tomto kole ještě neexistovaly.` : `${n} návrhů v tomto kole ještě neexistovalo.`;
   $("generallink").href = detailHash(GENERAL.key, 1, gridRound);
   archive("gridarchive", gridRound);
+  buildRankingGrid(items);
   updateCounts();
 }
 function versionLink(it, v, i, detail = false, round = detailRound) {
   const a = document.createElement("a");
   a.href = detailHash(it.key, i + 1, round);
   a.setAttribute("aria-label", `${it.name} · ${v.name}, verze ${i + 1} ze ${it.versions.length}`);
-  a.title = v.name;
+  a.title = v.name; a.dataset.version = v.file;
   const img = document.createElement("img");
   img.src = v.thumb; img.alt = ""; img.loading = detail ? "eager" : "lazy"; img.decoding = "async";
   const name = document.createElement("span");
   name.textContent = detail ? `${i + 1}. ${v.name}` : i + 1;
   a.append(img, name);
+  if (detail) markVersion(a, v.file);
   return a;
 }
 function updateCounts() {
@@ -583,7 +927,7 @@ async function route() {
   $("roundstatus").textContent = `Zobrazeno kolo ${roundLabel(round)}. ${note}`;
   if (!it) {
     current = currentVer = null;
-    gridRound = round; gridItems = items; buildGrid();
+    gridRound = round; gridItems = items; buildGrid(); renderVoting();
     $("detail").hidden = true; $("gridview").hidden = false;
     document.title = DATA.title;
     if (note) { $("routeerrortext").textContent = note; $("routeerror").hidden = false; }
@@ -593,6 +937,7 @@ async function route() {
   const vi = it.versions ? Math.min(Math.max((parseInt(vpart, 10) || 1) - 1, 0), it.versions.length - 1) : 0;
   const ver = it.versions ? it.versions[vi] : null;
   current = it; currentVer = ver; detailRound = round;
+  $("picklimit").textContent = "";
   if (!same) $("comparetoggle").checked = false;
   $("gridview").hidden = true; $("detail").hidden = false;
   $("back").href = gridHash(gridRound);
@@ -631,6 +976,7 @@ async function route() {
   }
   renderComments();
   renderComparison();
+  renderVoting();
 }
 window.addEventListener("hashchange", route);
 $("roundretry").addEventListener("click", route);
@@ -814,12 +1160,12 @@ function saveDraft() {
   v.trim() ? LS.set("draft:" + current.key, v) : LS.del("draft:" + current.key);
 }
 $("ctext").addEventListener("input", saveDraft);
-$("cname").addEventListener("change", () => LS.set("name", $("cname").value.trim()));
+$("cname").addEventListener("change", () => setBallotName($("cname").value.trim()));
 $("cform").addEventListener("submit", async e => {
   e.preventDefault();
   const name = $("cname").value.trim(), text = $("ctext").value.trim();
   if (!name || !text) return;
-  LS.set("name", name);
+  setBallotName(name);
   $("csend").disabled = true; $("cerr").textContent = "";
   try {
     const r = await api("/api/comments", { method: "POST",
@@ -846,7 +1192,7 @@ $("zoom").addEventListener("click", e => {
   z.hidden = true;
 });
 document.addEventListener("keydown", e => {
-  if (e.target.closest("textarea, select, [contenteditable]") ||
+  if (e.target.closest("#ballottray, textarea, select, [contenteditable]") ||
       e.target.matches('input:not([type="checkbox"]):not([type="range"])')) return;
   if (!$("zoom").hidden) { if (e.key === "Escape") $("zoom").hidden = true; return; }
   // before the modifier check: Czech keyboards type [ and ] with AltGr, which browsers report as Ctrl+Alt
